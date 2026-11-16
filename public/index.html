@@ -172,6 +172,22 @@
   #ocrStatus{margin-top:8px;font-size:12px;color:var(--ink3);line-height:1.55;min-height:16px}
   #ocrStatus.ok{color:var(--pass)} #ocrStatus.err{color:var(--reject)}
 
+  /* ---------- 变量旁的导入入口 / 趋势面板 ---------- */
+  .lk.mini{padding:1px 6px;font-size:10.5px;margin-left:0}
+  .ocr-msg{font-size:11px;color:var(--ink3);line-height:1.4}
+  .ocr-msg.ok{color:var(--pass)} .ocr-msg.err{color:var(--reject)}
+  .tpanel{display:none;border:1px solid var(--line);border-radius:11px;padding:12px 13px;background:#fbfcfe;margin-top:2px}
+  .tpanel.on{display:block}
+  .tp-head{display:flex;align-items:center;gap:10px;margin-bottom:9px;flex-wrap:wrap}
+  .tp-title{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3)}
+  .tp-range{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink3);margin-left:auto}
+  .tp-range select{width:auto;min-height:30px;padding:3px 26px 3px 8px;font-size:12px}
+  .tp-x{
+    border:0;background:none;font-size:17px;line-height:1;color:var(--ink4);cursor:pointer;padding:0 3px;
+  }
+  .tp-x:hover{color:var(--ink2)}
+  .tpanel .drop{padding:12px}
+
   /* ---------- 趋势图识别 ---------- */
   .tstatus{margin-top:9px;font-size:12px;color:var(--ink3);line-height:1.55;min-height:16px}
   .tstatus.ok{color:var(--pass)} .tstatus.err{color:var(--reject)}
@@ -313,38 +329,6 @@
     <!-- 左 -->
     <div>
       <div class="card">
-        <div class="card-h"><h2>截图识别</h2><span class="aside">可选功能 · 识别结果需人工核对</span></div>
-        <div class="drop" id="drop" tabindex="0" role="button" aria-label="上传截图">
-          <div class="ic">⌘</div>
-          <b>点击选择、拖入或直接粘贴（⌘V）</b>
-          <small>对准 Ahrefs 的 KD 与 ~N websites、Google 结果页的「找到约 X 条结果」识别效果最佳</small>
-        </div>
-        <div id="ocrStatus"></div>
-      </div>
-
-      <div class="card">
-        <div class="card-h"><h2>趋势图识别</h2><span class="aside">走势图 → 形态（本地识别）</span></div>
-        <div class="field" style="margin-bottom:10px">
-          <label class="fl" for="trendRange">时间范围
-            <button class="q" type="button" aria-label="时间范围说明">?<span class="bub"><b>为何要选：</b>判断"季节性"需要知道横轴总跨度，否则无法把图形换算成 12 个月的滞后周期。<br>选错会导致周期判断失效，其余形态不受影响。</span></button>
-          </label>
-          <select id="trendRange">
-            <option value="12">过去 12 个月</option>
-            <option value="60">过去 5 年</option>
-            <option value="3">过去 90 天</option>
-            <option value="1">过去 7 天</option>
-          </select>
-        </div>
-        <div class="drop" id="tdrop" tabindex="0" role="button" aria-label="上传走势图">
-          <div class="ic">⌁</div>
-          <b>点击选择、拖入或粘贴走势图</b>
-          <small>Google Trends 截图效果最佳；宽度建议 ≥ 800px，需包含完整曲线与时间轴</small>
-        </div>
-        <div id="tStatus" class="tstatus"></div>
-        <div id="tResult" class="tresult"></div>
-      </div>
-
-      <div class="card">
         <div class="card-h"><h2>实测数据</h2><span class="aside">带 <span style="color:var(--reject)">*</span> 为必填项</span></div>
         <div class="grid2">
           <div class="field span2">
@@ -361,6 +345,10 @@
               <button class="lk" type="button" data-tool="ahrefs">查 Ahrefs<svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 8L8 2M8 2H3.4M8 2v4.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
             </label>
             <input type="number" id="kd" min="0" max="100" step="1" placeholder="54" inputmode="numeric">
+            <div style="display:flex;align-items:center;gap:8px;margin-top:5px;flex-wrap:wrap">
+              <button class="lk mini" type="button" data-act="ocr" data-scope="kd">截图取数</button>
+              <span class="ocr-msg" id="ocrStatus"></span>
+            </div>
             <label class="sw-line">
               <input type="checkbox" id="sNewInline">
               <span class="track"></span>
@@ -383,8 +371,9 @@
 
           <div class="field">
             <label class="fl" for="trend">趋势形态 <span class="req">*</span>
-              <button class="q" type="button" aria-label="趋势判断说明">?<span class="bub"><b>判断方式：</b>在 Trends 中分别查看 12 个月与 5 年区间。<br>仅个别月份有量 → 季节<br>短期冲高后归零 → 尖刺<br>整体持续走低 → 下降<br>全年稳定有量 → 平稳</span></button>
-              <button class="lk" type="button" data-tool="trends">看 Trends<svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 8L8 2M8 2H3.4M8 2v4.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+              <button class="q" type="button" aria-label="趋势判断说明">?<span class="bub"><b>判断方式：</b>优先用 CSV 导出（最准），其次用走势图识别。<br>仅个别月份有量 → 季节；短期冲高后归零 → 尖刺；整体持续走低 → 下降；全年稳定有量 → 平稳。</span></button>
+              <button class="lk" type="button" data-act="trend">走势图</button>
+              <button class="lk" type="button" data-act="csv">CSV</button>
             </label>
             <select id="trend">
               <option value="">请选择…</option>
@@ -415,12 +404,35 @@
             <div class="err" id="serp-err"></div>
           </div>
 
+          <div class="span2 tpanel" id="trendPanel">
+            <div class="tp-head">
+              <span class="tp-title">趋势识别</span>
+              <label class="tp-range">时间范围（走势图需要）
+                <select id="trendRange">
+                  <option value="12">过去 12 个月</option>
+                  <option value="60">过去 5 年</option>
+                  <option value="3">过去 90 天</option>
+                  <option value="1">过去 7 天</option>
+                </select>
+              </label>
+              <button class="tp-x" type="button" id="btnTrendClose" aria-label="收起">×</button>
+            </div>
+            <div class="drop" id="tdrop" tabindex="0" role="button" aria-label="上传走势图">
+              <div class="ic">⌁</div>
+              <b>点击选择、拖入或粘贴走势图</b>
+              <small>也可直接点上方「CSV」导入 Google Trends 导出的 multiTimeline.csv（更准确）</small>
+            </div>
+            <div id="tStatus" class="tstatus"></div>
+            <div id="tResult" class="tresult"></div>
+          </div>
+
           <div class="sep span2"><span>以下选填 · 影响 KGR 与风险提示</span></div>
 
           <div class="field">
             <label class="fl" for="intitle">intitle 结果数 <span class="opt" id="intitleOpt">可选</span> <span class="req onlyNew">*</span>
               <button class="q" type="button" aria-label="intitle 取值说明">?<span class="bub"><b>取值方式：</b>在 Google 搜索 <code>intitle:"关键词"</code>（须带引号），点击搜索框下方「工具」，读取「找到约 X 条结果」。<br>未加引号时结果数会显著偏大，不可用于计算；该数值仅用于计算 KGR。</span></button>
               <button class="lk" type="button" data-tool="google-intitle">搜 intitle<svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 8L8 2M8 2H3.4M8 2v4.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+              <button class="lk mini" type="button" data-act="ocr" data-scope="intitle">截图取数</button>
             </label>
             <input type="number" id="intitle" min="1" step="1" placeholder="1400" inputmode="numeric">
             <div class="err" id="intitle-err"></div>
@@ -440,6 +452,9 @@
             <label class="chk"><input type="checkbox" id="sitelinks"> 前 10 有 Sitelinks</label>
             <label class="chk"><input type="checkbox" id="domain" checked> .com 可注册</label>
           </div>
+
+          <input type="file" id="ocrFile" accept="image/*" hidden>
+          <input type="file" id="csvFile" accept=".csv,text/csv" hidden>
         </div>
       </div>
 
@@ -1199,11 +1214,11 @@
     }catch(_){ return false; }
   }
 
-  /* ============ 截图识别 ============ */
-  const drop = $('drop'), ocrStatus = $('ocrStatus');
-  let ocrWorker = null, ocrBusy = false;
+  /* ============ 截图识别（入口在各字段旁） ============ */
+  const ocrStatus = $('ocrStatus'), ocrFile = $('ocrFile');
+  let ocrWorker = null, ocrBusy = false, ocrScope = 'kd';
 
-  function setStatus(msg, kind){ ocrStatus.textContent = msg || ''; ocrStatus.className = kind || ''; }
+  function setStatus(msg, kind){ ocrStatus.textContent = msg || ''; ocrStatus.className = 'ocr-msg' + (kind ? ' ' + kind : ''); }
   function loadScript(src){
     return new Promise((res, rej) => {
       const s = document.createElement('script');
@@ -1246,20 +1261,18 @@
     if(!file || !/^image\//.test(file.type)){ setStatus('请选择图片文件。','err'); return; }
     if(ocrBusy){ setStatus('正在识别上一张图片，请稍候。'); return; }
     ocrBusy = true;
-    const url = URL.createObjectURL(file);
-    const prev = drop.querySelector('img'); if(prev){ URL.revokeObjectURL(prev.src); prev.remove(); }
-    const img = document.createElement('img'); img.src = url; img.alt = '截图预览';
-    drop.appendChild(img);
     try{
       const w = await ensureOCR();
       setStatus('识别中…');
       const { data } = await w.recognize(file);
       const r = parseText(data.text || '');
       const filled = [];
-      if(r.kd !== undefined && r.kd <= 100){ F.kd.value = r.kd; F.kd.classList.add('auto'); filled.push('KD ' + r.kd); }
-      if(r.ref !== undefined){ F.ref.value = r.ref; F.ref.classList.add('auto'); filled.push('外链站 ' + r.ref); }
-      if(r.intitle !== undefined){ F.intitle.value = r.intitle; F.intitle.classList.add('auto'); filled.push('intitle ' + fmt(r.intitle)); }
-      if(r.trend !== undefined){ F.trend.value = r.trend; F.trend.classList.add('auto'); filled.push('趋势 ' + TREND[r.trend]); }
+      const wantKd = ocrScope === 'kd';
+      const wantIt = ocrScope === 'intitle';
+      if(wantKd && r.kd !== undefined && r.kd <= 100){ F.kd.value = r.kd; F.kd.classList.add('auto'); filled.push('KD ' + r.kd); }
+      if(wantKd && r.ref !== undefined){ F.ref.value = r.ref; F.ref.classList.add('auto'); filled.push('外链站 ' + r.ref); }
+      if(wantIt && r.intitle !== undefined){ F.intitle.value = r.intitle; F.intitle.classList.add('auto'); filled.push('intitle ' + fmt(r.intitle)); }
+      if(wantKd && r.trend !== undefined && r.intitle === undefined){ F.trend.value = r.trend; filled.push('趋势 ' + TREND[r.trend]); }
 
       if(filled.length){
         setStatus('已识别 ' + filled.length + ' 项：' + filled.join('、') + '。黄色标注的字段请人工核对，修改后标记自动清除。', 'ok');
@@ -1272,19 +1285,18 @@
     }finally{ ocrBusy = false; }
   }
 
-  drop.addEventListener('click', () => {
-    const inp = document.createElement('input');
-    inp.type = 'file'; inp.accept = 'image/*';
-    inp.addEventListener('change', () => { if(inp.files && inp.files[0]) handleFile(inp.files[0]); });
-    inp.click();
+  // 每个「截图取数」按钮位于对应字段旁；共用同一个隐藏 input
+  document.querySelectorAll('[data-act="ocr"]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.preventDefault(); e.stopPropagation();
+      ocrScope = btn.dataset.scope || 'kd';
+      ocrFile.value = '';
+      ocrFile.click();
+    });
+    btn.addEventListener('mousedown', e => e.preventDefault());
   });
-  drop.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); drop.click(); } });
-  drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
-  drop.addEventListener('dragleave', () => drop.classList.remove('over'));
-  drop.addEventListener('drop', e => {
-    e.preventDefault(); drop.classList.remove('over');
-    const f = e.dataTransfer.files && e.dataTransfer.files[0];
-    if(f) handleFile(f);
+  ocrFile.addEventListener('change', () => {
+    if(ocrFile.files && ocrFile.files[0]) handleFile(ocrFile.files[0]);
   });
   document.addEventListener('paste', e => {
     const tag = (e.target && e.target.tagName) || '';
@@ -1439,7 +1451,8 @@
     return {best, second, conf:Math.min(0.97,conf), mods, all:c.slice(0,3)};
   }
 
-  function renderTrend(res, imgW){
+  function renderTrend(res, meta){
+    meta = meta || {};
     const t=res.best, label=TREND[t.key]||t.key;
     const kind = ['spike','declining','hump'].indexOf(t.key)>=0 ? 'bad'
                : (['box','multi'].indexOf(t.key)>=0 ? 'warn' : '');
@@ -1456,7 +1469,14 @@
     html+='<ul class="tevidence">';
     html+='<li><b>主判据：</b>'+t.why+'</li>';
     if(res.second) html+='<li><b>次选：</b>'+TREND[res.second.key]+'（'+res.second.score+'）— '+res.second.why+'</li>';
-    html+='<li><b>数据质量：</b>曲线覆盖率 '+(res.f.coverage*100).toFixed(1)+'%，图宽 '+imgW+'px</li>';
+    const src = meta.source || '走势图';
+    const pts = meta.points || res.f.N;
+    const span = meta.months ? meta.months.toFixed(1) + ' 个月' : '—';
+    html+='<li><b>特征值：</b>斜率 '+res.f.slope.toFixed(3)+'、R² '+res.f.r2.toFixed(3)
+      +'、峰宽 '+(res.f.peakWidth*100).toFixed(1)+'%、峰值/基线 '+res.f.peakOverBase.toFixed(2)
+      +'、波动系数 '+res.f.cv.toFixed(2)+'</li>';
+    html+='<li><b>数据来源：</b>'+src+' · '+pts+' 个数据点 · 跨度 '+span
+      +(meta.source==='CSV' ? '' : ' · 覆盖率 '+(res.f.coverage*100).toFixed(1)+'%')+'</li>';
     html+='</ul>';
 
     if(low){
@@ -1501,7 +1521,7 @@
       const f=trendFeatures(ex, months);
       const res=classifyTrend(f, months);
       res.f=f;
-      renderTrend(res, im.naturalWidth);
+      renderTrend(res, {source:'走势图', points:f.N, months, imgW:im.naturalWidth});
       if(im.naturalWidth<800) setT('提示：图像宽度不足 800px，识别结果可靠性下降。','err');
       else if(ex.coverage<0.85) setT('提示：曲线覆盖率 '+(ex.coverage*100).toFixed(0)+'%，部分区段可能被遮挡或线条过细。','err');
       else setT('识别完成：'+TREND[res.best.key]+'（置信度 '+Math.round(res.conf*100)+'%）','ok');
@@ -1534,6 +1554,76 @@
         if(f){ analyzeTrendFile(f); break; }
       }
     }
+  });
+
+
+  /* ============ CSV 导入（比图像更准） ============ */
+  const csvFile = $('csvFile'), trendPanel = $('trendPanel');
+
+  function openTrendPanel(){ trendPanel.classList.add('on'); }
+
+  // Google Trends multiTimeline.csv：跳过表头，只取 "日期,数值" 行
+  function parseTrendCsv(text){
+    const rows = [];
+    let header = '';
+    text.replace(/^\uFEFF/, '').replace(/\r/g, '').split('\n').forEach(line => {
+      const p = line.split(',').map(x => x.trim().replace(/^"|"$/g, ''));
+      if(p.length < 2) return;
+      if(/^\d{4}-\d{2}-\d{2}/.test(p[0])){
+        const raw = p[1];
+        if(raw === '') return;
+        const v = /^<1$/.test(raw) ? 0.5 : Number(raw);
+        if(Number.isFinite(v)) rows.push({d:p[0], v});
+      } else if(!header && p[1] && p[1].indexOf(':') >= 0){
+        header = p[1];
+      }
+    });
+    return {rows, header};
+  }
+
+  async function analyzeTrendCsv(file){
+    try{
+      const text = await file.text();
+      const {rows, header} = parseTrendCsv(text);
+      openTrendPanel();
+      if(rows.length < 8){
+        tResult.classList.remove('on'); tResult.innerHTML = '';
+        setT('CSV 中可用的数据点不足 8 个（解析到 '+rows.length+' 个）。请确认是 Google Trends 导出的 multiTimeline.csv。','err');
+        return;
+      }
+      const d0 = Date.parse(rows[0].d+'T00:00:00Z'), d1 = Date.parse(rows[rows.length-1].d+'T00:00:00Z');
+      const months = (d1-d0)/86400000/30.44;
+      const raw = rows.map(r=>r.v);
+      const mn = Math.min(...raw), mx = Math.max(...raw);
+      const span = mx - mn;
+      // 与图像路径完全一致的归一化：(v-min)/(max-min)
+      const vals = span > 0 ? raw.map(v => (v-mn)/span) : raw.map(() => 0.5);
+      const f = trendFeatures({vals, coverage:1}, months);
+      const res = classifyTrend(f, months);
+      res.f = f;
+      renderTrend(res, {source:'CSV', points:rows.length, months, header});
+      setT('CSV 识别完成：'+TREND[res.best.key]+'（置信度 '+Math.round(res.conf*100)+'%）'
+        + (header ? ' · ' + header : ''), 'ok');
+    }catch(e){
+      tResult.classList.remove('on'); tResult.innerHTML = '';
+      setT('CSV 读取失败，请确认文件是 UTF-8 编码的 .csv。','err');
+    }
+  }
+
+  // 趋势维度的两个入口：走势图 / CSV；以及面板收起
+  document.querySelectorAll('[data-act="trend"]').forEach(btn => {
+    btn.addEventListener('click', e => { e.preventDefault(); openTrendPanel(); tdrop.scrollIntoView({block:'nearest'}); });
+    btn.addEventListener('mousedown', e => e.preventDefault());
+  });
+  document.querySelectorAll('[data-act="csv"]').forEach(btn => {
+    btn.addEventListener('click', e => { e.preventDefault(); openTrendPanel(); csvFile.value=''; csvFile.click(); });
+    btn.addEventListener('mousedown', e => e.preventDefault());
+  });
+  csvFile.addEventListener('change', () => { if(csvFile.files && csvFile.files[0]) analyzeTrendCsv(csvFile.files[0]); });
+  $('btnTrendClose').addEventListener('click', () => {
+    trendPanel.classList.remove('on');
+    tResult.classList.remove('on'); tResult.innerHTML = ''; setT('');
+    const im = tdrop.querySelector('img'); if(im){ URL.revokeObjectURL(im.src); im.remove(); }
   });
 
   /* ============ 初始化 ============ */
