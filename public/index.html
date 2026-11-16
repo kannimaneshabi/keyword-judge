@@ -112,6 +112,14 @@
   }
   .na-note{display:none;font-size:11px;color:var(--ink3);margin-top:4px;line-height:1.5}
   .isNew .na-note{display:block}
+  .onlyNormal{display:inline-flex}
+  .isNew .onlyNormal{display:none}
+  .lnk-na{
+    margin-top:4px;padding:0;border:0;background:none;cursor:pointer;
+    font-size:11.5px;font-weight:600;color:var(--accent);text-decoration:underline;
+    text-underline-offset:2px;text-decoration-thickness:1px;
+  }
+  .lnk-na:hover{color:#144a6b}
   .err.on{display:block}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:13px}
   @media (max-width:600px){ .grid2{grid-template-columns:1fr} }
@@ -296,6 +304,7 @@
               <button class="lk" type="button" data-tool="ahrefs">查 Ahrefs<svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 8L8 2M8 2H3.4M8 2v4.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
             </label>
             <input type="number" id="kd" min="0" max="100" step="1" placeholder="54" inputmode="numeric">
+            <button class="lnk-na onlyNormal" type="button" id="btnNewMode">Ahrefs 显示 No data？点此启用新词模式</button>
             <div class="na-note">新词模式下不参与判定（Ahrefs 无数据时属正常）</div>
             <div class="err" id="kd-err"></div>
           </div>
@@ -1006,6 +1015,16 @@
     });
     // 阻止 label 把点击转成输入框聚焦
     btn.addEventListener('mousedown', e => e.preventDefault());
+  });
+
+  $('btnNewMode').addEventListener('click', () => {
+    F.sNew.checked = true;
+    syncNewMode();
+    scheduleDraft();
+    toast('已启用新词模式：KD 与外链数不参与判定');
+    const it = F.intitle;
+    it.focus();
+    it.scrollIntoView({block:'center', behavior:'smooth'});
   });
 
   $('btnJudge').addEventListener('click', () => { judged = true; judge(true); });
