@@ -544,11 +544,13 @@ reddit.com/r/capcut"></textarea>
         <div class="chips" id="chips"></div>
         <table class="rows" id="rows"></table>
         <div class="mdbox" id="mdWrap" style="display:none">
-          <label class="fl" for="md">可粘贴至记录表的一行</label>
+          <label class="fl" for="md">选词记录行（13 列，对应表 B）
+            <button class="q" type="button" aria-label="记录行用途说明">?<span class="bub"><b>用途：</b>把本次判定压成一行表格记录，粘进 <code>docs/选词工作台.md</code> 的表 B，形成候选词台账。<br><b>为什么值得记：</b>三个月后回看，能知道当时填的数值和判定依据，而不是只剩一个「做过、砍了」的印象。<br><b>注意：</b>来源、出现时间、对比倍数三列属找词阶段信息，本工具不采集，粘贴后按需手填。</span></button>
+          </label>
           <textarea id="md" readonly></textarea>
           <div class="md-actions">
             <button class="btn sm" id="btnCopy" type="button">复制这一行</button>
-            <span style="font-size:11.5px;color:var(--ink4)">包含档位与规则签名，便于日后复查</span>
+            <span style="font-size:11.5px;color:var(--ink4)">列顺序与表 B 一致，末尾含档位与规则签名</span>
           </div>
         </div>
       </div>
@@ -950,6 +952,7 @@ reddit.com/r/capcut"></textarea>
       (note ? '<span class="note">' + note + '</span>' : '') + '</td></tr>';
   }
 
+  // 输出一行，列顺序严格对应 docs/选词工作台.md 表 B（13 列）
   function buildMarkdown(d, r, rules){
     const lvName = level === 'custom' ? '自定义' : PRESETS[level].name;
     const aiLimitTxt = (rules.allintitle != null ? rules.allintitle : (rules.ai != null ? rules.ai : 50));
@@ -958,14 +961,24 @@ reddit.com/r/capcut"></textarea>
       ' 趋势硬' + (rules.trendHard ? '✓' : '✗') + ' 品牌' + (rules.brandVeto ? '✓' : '✗') +
       ' 风险≥' + (rules.riskGate || '关');
     const concl = (r.cls === 'reject' ? '❌ 砍' : r.cls === 'pass' ? '✅ 可做' : '⚠️ 待定') + '：' + r.reason;
-    return '| 词 | ' + d.kw + ' | Trends | ' + TREND[d.trend] + ' | — | ' +
-      (d.volume ? fmt(d.volume) + '/月' : '未估') + ' | ' + TREND[d.trend] + ' | ' +
-      (d.intitle === null ? '未查' : fmt(d.intitle)) + ' | ' +
-      (r.isNew ? '—' : (r.kgr === null ? '—' : r.kgr.toFixed(3))) + ' | ' +
-      (r.isNew ? 'N/A（新词）' : d.kd + (d.kd < rules.kd ? '' : ' (超)')) + ' | ' +
-      (r.isNew ? 'N/A' : fmt(d.ref) + (d.ref < rules.ref ? '' : ' (超)')) + ' | ' +
-      (d.serp ? SERP[d.serp] + (d.sitelinks ? '，有 Sitelinks' : '') : '未查') + ' | ' +
-      (d.domainOk ? '可' : '不可') + ' | ' + concl + ' 〔' + sig + '〕 |';
+
+    const cells = [
+      d.kw,                                                 // 1  关键词
+      '—',                                                  // 2  来源（找词阶段信息）
+      '—',                                                  // 3  出现时间（同上）
+      '—',                                                  // 4  对比倍数（同上）
+      d.volume === null ? '—' : fmt(d.volume),              // 5  估算日搜索量
+      TREND[d.trend] || '—',                                // 6  趋势形态
+      d.intitle === null ? '未查' : fmt(d.intitle),          // 7  intitle 结果数
+      r.isNew || r.kgr === null ? '—' : r.kgr.toFixed(3),   // 8  KGR
+      r.isNew ? 'N/A（新词）' : String(d.kd),                // 9  KD
+      r.isNew ? 'N/A' : fmt(d.ref),                         // 10 所需外链站数
+      d.serp ? SERP[d.serp] + (d.sitelinks ? '，有 Sitelinks' : '') : '未查',  // 11 前 10 概况
+      d.domainOk ? '可' : '不可',                             // 12 .com 可注册
+      concl + ' 〔' + sig + '〕'                             // 13 结论
+    ];
+    // 单元格内的竖线会破坏表格结构，需转义
+    return '| ' + cells.map(c => String(c).replace(/\|/g, '\\|')).join(' | ') + ' |';
   }
 
   function judge(explicit){
