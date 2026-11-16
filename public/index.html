@@ -104,6 +104,14 @@
   input.invalid,select.invalid{border-color:#d99;background:#fdf7f6}
   select{appearance:none;padding-right:32px;background-image:url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237d8896' stroke-width='1.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
   .err{display:none;font-size:11.5px;color:var(--reject);margin-top:4px;line-height:1.5}
+  .onlyNew{display:none}
+  .isNew .onlyNew{display:inline-flex}
+  .isNew #intitleOpt{display:none}
+  input:disabled,input.na{
+    background:#f2f5f8;color:var(--ink4);border-style:dashed;cursor:not-allowed;
+  }
+  .na-note{display:none;font-size:11px;color:var(--ink3);margin-top:4px;line-height:1.5}
+  .isNew .na-note{display:block}
   .err.on{display:block}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:13px}
   @media (max-width:600px){ .grid2{grid-template-columns:1fr} }
@@ -288,6 +296,7 @@
               <button class="lk" type="button" data-tool="ahrefs">查 Ahrefs<svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 8L8 2M8 2H3.4M8 2v4.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
             </label>
             <input type="number" id="kd" min="0" max="100" step="1" placeholder="54" inputmode="numeric">
+            <div class="na-note">新词模式下不参与判定（Ahrefs 无数据时属正常）</div>
             <div class="err" id="kd-err"></div>
           </div>
 
@@ -297,6 +306,7 @@
               <button class="lk" type="button" data-tool="ahrefs">查 Ahrefs<svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 8L8 2M8 2H3.4M8 2v4.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
             </label>
             <input type="number" id="refdomains" min="0" step="1" placeholder="99" inputmode="numeric">
+            <div class="na-note">新词模式下不参与判定</div>
             <div class="err" id="refdomains-err"></div>
           </div>
 
@@ -333,7 +343,7 @@
           <div class="sep span2"><span>以下选填 · 影响 KGR 与风险提示</span></div>
 
           <div class="field">
-            <label class="fl" for="intitle">intitle 结果数 <span class="opt">可选</span>
+            <label class="fl" for="intitle">intitle 结果数 <span class="opt" id="intitleOpt">可选</span> <span class="req onlyNew">*</span>
               <button class="q" type="button" aria-label="intitle 取值说明">?<span class="bub"><b>取值方式：</b>在 Google 搜索 <code>intitle:"关键词"</code>（须带引号），点击搜索框下方「工具」，读取「找到约 X 条结果」。<br>未加引号时结果数会显著偏大，不可用于计算；该数值仅用于计算 KGR。</span></button>
               <button class="lk" type="button" data-tool="google-intitle">搜 intitle<svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 8L8 2M8 2H3.4M8 2v4.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
             </label>
@@ -364,6 +374,7 @@
           <label>KD &lt; <input type="number" id="tKd" value="10" min="1" max="100"></label>
           <label>外链站 &lt; <input type="number" id="tRef" value="10" min="1" max="999"></label>
           <label>KGR &lt; <input type="number" id="tKgr" value="0.25" min="0.01" max="10" step="0.05"></label>
+          <label class="onlyNew">allintitle ≤ <input type="number" id="tAI" value="50" min="1" max="100000"></label>
         </div>
         <div class="toggles">
           <div class="tg">
@@ -373,6 +384,10 @@
           <div class="tg">
             <label class="sw"><input type="checkbox" id="sTrend"><i></i></label>
             <div class="tg-t"><b>趋势下降 / 尖刺 视为硬指标</b><small>依据：此类关键词并非不可做，关键在于是否了解其热度特征</small></div>
+          </div>
+          <div class="tg">
+            <label class="sw"><input type="checkbox" id="sNew"><i></i></label>
+            <div class="tg-t"><b>新词模式（KD 无数据）</b><small>勾选后 KD 与所需外链数不参与判定，改用 allintitle 供给量与 SERP 结构判断</small></div>
           </div>
           <div class="tg">
             <label class="sw"><input type="checkbox" id="sRisk" checked><i></i></label>
@@ -432,7 +447,8 @@
     kw:$('kw'), intitle:$('intitle'), volume:$('volume'), kd:$('kd'), ref:$('refdomains'),
     trend:$('trend'), serp:$('serp'), brand:$('brand'), sitelinks:$('sitelinks'), domain:$('domain'),
     tKd:$('tKd'), tRef:$('tRef'), tKgr:$('tKgr'),
-    sBrand:$('sBrand'), sTrend:$('sTrend'), sRisk:$('sRisk'), tRisk:$('tRisk')
+    sBrand:$('sBrand'), sTrend:$('sTrend'), sRisk:$('sRisk'), tRisk:$('tRisk'),
+    sNew:$('sNew'), tAI:$('tAI')
   };
   const NUM_FIELDS = ['intitle','volume','kd','ref','tKd','tRef','tKgr','tRisk'];
   const DRAFT_KEY = 'kj.draft.v1';
@@ -443,17 +459,17 @@
   /* ============ 三档预设 ============ */
   const PRESETS = {
     strict: {
-      name:'严格', kd:10, ref:10, kgr:0.25, trendHard:true, brandVeto:true, riskGate:2,
+      name:'严格', kd:10, ref:10, kgr:0.25, ai:50, trendHard:true, brandVeto:true, riskGate:2,
       desc:'<b>严格 · 适用于第一个练手站</b>：KD &lt; 10、所需外链站 &lt; 10、KGR &lt; 0.25；趋势下降或尖刺直接否决；品牌词一票否决；风险 ≥2 项判为待定。<span class="src">本档全部数值均可追溯至教程文本。</span>',
       color:'#a9382d'
     },
     medium: {
-      name:'中等', kd:29, ref:25, kgr:0.5, trendHard:false, brandVeto:true, riskGate:3,
+      name:'中等', kd:29, ref:25, kgr:0.5, ai:200, trendHard:false, brandVeto:true, riskGate:3,
       desc:'<b>中等 · 适用于第二、三个站</b>：KD &lt; 29、所需外链站 &lt; 25、KGR &lt; 0.5；趋势仅提示；品牌词仍否决；风险 ≥3 项判为待定。<span class="src">KD &lt; 29 取自教程「保小图大」一节。</span><span class="mine">外链 25 与 KGR 0.5 为按同等倍数推定，教程未作规定。</span>',
       color:'#96690f'
     },
     loose: {
-      name:'宽松', kd:49, ref:50, kgr:1, trendHard:false, brandVeto:false, riskGate:0,
+      name:'宽松', kd:49, ref:50, kgr:1, ai:500, trendHard:false, brandVeto:false, riskGate:0,
       desc:'<b>宽松 · 适用于新词与热点追踪</b>：KD &lt; 49、所需外链站 &lt; 50、KGR &lt; 1；趋势与品牌词仅提示；风险不拦截。适用于对风险有明确认知并主动选择承担的情形。<span class="mine">KD 0—49 借用教程的筛词口径，其余为工具设定。</span>',
       color:'#1c5d86'
     }
@@ -553,6 +569,28 @@
     toast(tool === 'trends' ? '已在 Google Trends 打开该关键词' : '已在 Google 打开查询结果');
   }
 
+  // 新词模式：切换界面状态（不影响已填数据，切回即恢复）
+  function syncNewMode(){
+    const on = F.sNew.checked;
+    document.body.classList.toggle('isNew', on);
+    [F.kd, F.ref].forEach(el => {
+      el.disabled = on;
+      el.classList.toggle('na', on);
+      if(on){ el.dataset.keep = el.value; el.value = ''; el.placeholder = 'N/A'; }
+      else {
+        if(el.dataset.keep && !el.value) el.value = el.dataset.keep;
+        el.placeholder = el.id === 'kd' ? '54' : '99';
+      }
+    });
+    if(on){
+      F.kd.setAttribute('aria-disabled','true');
+      F.ref.setAttribute('aria-disabled','true');
+    } else {
+      F.kd.removeAttribute('aria-disabled');
+      F.ref.removeAttribute('aria-disabled');
+    }
+  }
+
   function syncTools(){
     const keyword = normalizeKw(F.kw.value);
     document.querySelectorAll('.lk').forEach(btn => {
@@ -569,25 +607,36 @@
   function validate(needAll){
     clearErrs();
     const errs = [];
+    const isNew = F.sNew.checked;
     const kw = F.kw.value.trim();
     if(!kw){ setErr('kw','必填：从 Trends 或搜索结果里复制英文关键词'); errs.push('关键词'); }
     else if(/[\u4e00-\u9fa5]/.test(kw)){ setErr('kw','含中文字符，海外站要用英文原词'); errs.push('关键词'); }
     else if(kw.length > 80){ setErr('kw','过长（>80 字符），确认是否粘贴了整段'); errs.push('关键词'); }
 
-    const kd = toNum(F.kd);
-    if(kd === null && needAll){ setErr('kd','必填'); errs.push('KD'); }
-    else if(Number.isNaN(kd)){ setErr('kd','不是有效数字'); errs.push('KD'); }
-    else if(kd !== null && (kd < 0 || kd > 100)){ setErr('kd','KD 取值范围 0—100'); errs.push('KD'); }
-    else if(kd !== null && !Number.isInteger(kd)){ setErr('kd','KD 是整数'); errs.push('KD'); }
+    // 新词模式：KD 与外链数不参与判定，intitle（allintitle 供给量）转为必填
+    if(isNew){
+      const it0 = toNum(F.intitle);
+      if(it0 === null && needAll){ setErr('intitle','新词模式必填：填 allintitle 结果数'); errs.push('allintitle 结果数'); }
+      else if(Number.isNaN(it0)){ setErr('intitle','不是有效数字'); errs.push('allintitle 结果数'); }
+      else if(it0 !== null && it0 < 0){ setErr('intitle','不能为负数'); errs.push('allintitle 结果数'); }
+    } else {
+      const kd = toNum(F.kd);
+      if(kd === null && needAll){ setErr('kd','必填；Ahrefs 无数据请勾选「新词模式」'); errs.push('KD'); }
+      else if(Number.isNaN(kd)){ setErr('kd','不是有效数字'); errs.push('KD'); }
+      else if(kd !== null && (kd < 0 || kd > 100)){ setErr('kd','KD 取值范围 0—100'); errs.push('KD'); }
+      else if(kd !== null && !Number.isInteger(kd)){ setErr('kd','KD 是整数'); errs.push('KD'); }
 
-    const ref = toNum(F.ref);
-    if(ref === null && needAll){ setErr('refdomains','必填'); errs.push('外链站数'); }
-    else if(Number.isNaN(ref)){ setErr('refdomains','不是有效数字'); errs.push('外链站数'); }
-    else if(ref !== null && ref < 0){ setErr('refdomains','不能为负数'); errs.push('外链站数'); }
+      const ref = toNum(F.ref);
+      if(ref === null && needAll){ setErr('refdomains','必填；Ahrefs 无数据请勾选「新词模式」'); errs.push('外链站数'); }
+      else if(Number.isNaN(ref)){ setErr('refdomains','不是有效数字'); errs.push('外链站数'); }
+      else if(ref !== null && ref < 0){ setErr('refdomains','不能为负数'); errs.push('外链站数'); }
+    }
 
     const it = toNum(F.intitle), vol = toNum(F.volume);
-    if(Number.isNaN(it)){ setErr('intitle','不是有效数字'); errs.push('intitle 结果数'); }
-    else if(it !== null && it <= 0){ setErr('intitle','应为大于 0 的整数；若确实搜不到，说明没有供应量'); errs.push('intitle 结果数'); }
+    if(!isNew){
+      if(Number.isNaN(it)){ setErr('intitle','不是有效数字'); errs.push('intitle 结果数'); }
+      else if(it !== null && it <= 0){ setErr('intitle','应为大于 0 的整数；若确实搜不到，说明没有供应量'); errs.push('intitle 结果数'); }
+    }
     if(Number.isNaN(vol)){ setErr('volume','不是有效数字'); errs.push('月搜索量'); }
     else if(vol !== null && vol <= 0){ setErr('volume','应为大于 0 的整数，或直接留空'); errs.push('月搜索量'); }
 
@@ -603,42 +652,65 @@
       intitle: toNum(F.intitle), volume: toNum(F.volume),
       kd: toNum(F.kd), ref: toNum(F.ref),
       trend: F.trend.value, serp: F.serp.value,
-      brand: F.brand.checked, sitelinks: F.sitelinks.checked, domainOk: F.domain.checked
+      brand: F.brand.checked, sitelinks: F.sitelinks.checked, domainOk: F.domain.checked,
+      isNew: F.sNew.checked
     };
   }
   function readRules(){
     return {
       kd: toNum(F.tKd) ?? 10, ref: toNum(F.tRef) ?? 10, kgr: toNum(F.tKgr) ?? 0.25,
       trendHard: F.sTrend.checked, brandVeto: F.sBrand.checked,
-      riskGate: F.sRisk.checked ? (toNum(F.tRisk) ?? 2) : 0
+      riskGate: F.sRisk.checked ? (toNum(F.tRisk) ?? 2) : 0,
+      allintitle: toNum(F.tAI) ?? 50
     };
   }
 
   /* ============ 核心判定（纯函数，无 DOM） ============ */
   function evaluate(d, rules){
+    const isNew = !!d.isNew;
     const trendBad = d.trend === 'declining' || d.trend === 'spike';
     const kgr = (d.intitle !== null && d.volume !== null && d.volume > 0) ? d.intitle / d.volume : null;
     const kgrHigh = kgr !== null && kgr > rules.kgr;
 
-    // 硬指标（顺序固定，供表格与结论复用）
-    const hard = [
-      { key:'kd', label:'Ahrefs KD', ok: d.kd < rules.kd,
-        txt: d.kd + '（门槛 < ' + rules.kd + (d.kd < rules.kd ? '' : '，超出 ' + (d.kd / rules.kd).toFixed(1) + ' 倍') + '）' },
-      { key:'ref', label:'所需外链网站数', ok: d.ref < rules.ref,
-        txt: '约 ' + fmt(d.ref) + ' 个（门槛 < ' + rules.ref + (d.ref < rules.ref ? '' : '，超出 ' + (d.ref / rules.ref).toFixed(1) + ' 倍') + '）' },
-      { key:'trend', label:'趋势形态', ok: !(rules.trendHard && trendBad), enforced: rules.trendHard,
-        txt: TREND[d.trend] + (trendBad ? (rules.trendHard ? '（硬指标拦截）' : '（警告，未拦截）') : '') }
-    ];
+    const aiLimit = rules.allintitle != null ? rules.allintitle : (rules.ai != null ? rules.ai : 50);
+
+    // 硬指标：常规模式看 KD / 外链 / 趋势；新词模式看 allintitle 供给量 / SERP 结构 / 趋势
+    let hard;
+    if(isNew){
+      const ai = d.intitle;
+      const aiOk = ai !== null && ai <= aiLimit;
+      hard = [
+        { key:'ai', label:'allintitle 供给量', ok: aiOk,
+          txt: (ai === null ? '未填' : fmt(ai) + ' 条') + '（阈值 ≤ ' + aiLimit +
+               (aiOk ? (ai <= 5 ? '，无人防守' : '') : '，超出 ' + (ai / aiLimit).toFixed(1) + ' 倍') + '）' },
+        { key:'serp', label:'前 10 构成', ok: d.serp !== 'dedicated',
+          txt: (d.serp ? SERP[d.serp] : '未选') + (d.serp === 'dedicated' ? '（已有专站占位）' : '') },
+        { key:'trend', label:'趋势形态', ok: !(rules.trendHard && trendBad), enforced: rules.trendHard,
+          txt: TREND[d.trend] + (trendBad ? (rules.trendHard ? '（硬指标拦截）' : '（警告，未拦截）') : '') }
+      ];
+    } else {
+      hard = [
+        { key:'kd', label:'Ahrefs KD', ok: d.kd < rules.kd,
+          txt: d.kd + '（门槛 < ' + rules.kd + (d.kd < rules.kd ? '' : '，超出 ' + (d.kd / rules.kd).toFixed(1) + ' 倍') + '）' },
+        { key:'ref', label:'所需外链网站数', ok: d.ref < rules.ref,
+          txt: '约 ' + fmt(d.ref) + ' 个（门槛 < ' + rules.ref + (d.ref < rules.ref ? '' : '，超出 ' + (d.ref / rules.ref).toFixed(1) + ' 倍') + '）' },
+        { key:'trend', label:'趋势形态', ok: !(rules.trendHard && trendBad), enforced: rules.trendHard,
+          txt: TREND[d.trend] + (trendBad ? (rules.trendHard ? '（硬指标拦截）' : '（警告，未拦截）') : '') }
+      ];
+    }
 
     // 风险项
     const risks = [];
     if(d.brand && !rules.brandVeto)     risks.push('品牌词：官方站点占据首位');
     if(trendBad && !rules.trendHard)    risks.push(TREND[d.trend] + '：需求窗口可能已关闭');
     if(d.sitelinks)                     risks.push('前列含 Sitelinks：用户意图指向特定站点');
-    if(d.serp === 'dedicated')          risks.push('前 10 名均为专注该词的独立站点');
+    if(d.serp === 'mixed')              risks.push('前 10 名中已有部分专注该词的独立站点');
+    if(!isNew && d.serp === 'dedicated') risks.push('前 10 名均为专注该词的独立站点');
     if(d.trend === 'seasonal')          risks.push('季节词：仅个别月份有搜索量');
-    if(kgrHigh)                         risks.push('KGR ' + kgr.toFixed(3) + ' 高于门槛 ' + rules.kgr);
+    if(!isNew && kgrHigh)               risks.push('KGR ' + kgr.toFixed(3) + ' 高于门槛 ' + rules.kgr);
     if(!d.domainOk)                     risks.push('.com 已被注册');
+    if(isNew && d.intitle !== null && d.intitle > 5 && d.intitle <= aiLimit)
+      risks.push('已有 ' + d.intitle + ' 个页面的标题命中该词，供给不算空白');
 
     const hardFails = hard.filter(h => !h.ok);
     let cls, label, reason;
@@ -659,14 +731,23 @@
       reason = '硬指标全部达标，未发现风险项。此类关键词较为稀缺，建议优先推进。';
     }
 
+    if(isNew){
+      reason += '（新词模式：未使用 KD 与外链数据，属定性判断）';
+    }
+
     // 数据自洽提示（不参与判定）
     const notes = [];
-    if(kgr !== null && kgr > 5) notes.push('KGR 异常偏高（' + kgr.toFixed(1) + '），请检查 intitle 结果数与月搜索量是否填反。');
-    if(d.kd <= 5 && d.serp === 'dedicated') notes.push('KD 很低但前 10 名均为独立站点，两项数据可能存在填写错误。');
-    if(d.ref === 0 && d.kd > 20) notes.push('所需外链站为 0 但 KD 偏高，两者通常不会同时出现，请核对。');
-    if(d.volume !== null && d.intitle !== null && d.volume > 0 && d.intitle > d.volume * 50) notes.push('intitle 结果数远大于月搜索量，请确认搜索时是否遗漏引号。');
+    if(!isNew){
+      if(kgr !== null && kgr > 5) notes.push('KGR 异常偏高（' + kgr.toFixed(1) + '），请检查 intitle 结果数与月搜索量是否填反。');
+      if(d.kd <= 5 && d.serp === 'dedicated') notes.push('KD 很低但前 10 名均为独立站点，两项数据可能存在填写错误。');
+      if(d.ref === 0 && d.kd > 20) notes.push('所需外链站为 0 但 KD 偏高，两者通常不会同时出现，请核对。');
+      if(d.volume !== null && d.intitle !== null && d.volume > 0 && d.intitle > d.volume * 50) notes.push('intitle 结果数远大于月搜索量，请确认搜索时是否遗漏引号。');
+    } else {
+      if(d.intitle === 0) notes.push('allintitle 结果为 0：该词尚无任何页面把整串词写进标题，供给完全空白。');
+      if(d.kd !== null) notes.push('新词模式下 KD 已填写的值被忽略，切回常规模式可继续使用。');
+    }
 
-    return {hard, risks, kgr, kgrHigh, cls, label, reason, notes, hardFails};
+    return {hard, risks, kgr, kgrHigh, cls, label, reason, notes, hardFails, isNew};
   }
 
   /* ============ 渲染 ============ */
@@ -679,7 +760,7 @@
   function renderChips(d){
     return ['strict','medium','loose'].map(k => {
       const p = PRESETS[k];
-      const rr = evaluate(d, {kd:p.kd, ref:p.ref, kgr:p.kgr, trendHard:p.trendHard, brandVeto:p.brandVeto, riskGate:p.riskGate});
+      const rr = evaluate(d, {kd:p.kd, ref:p.ref, kgr:p.kgr, allintitle:p.ai, trendHard:p.trendHard, brandVeto:p.brandVeto, riskGate:p.riskGate});
       const short = rr.cls === 'reject' ? '淘汰' : rr.cls === 'review' ? '待定' : '通过';
       return '<div class="chip ' + rr.cls + (level===k?' cur':'') + '"><span class="l">' + p.name + ' 档</span><span class="v">' + short + '</span></div>';
     }).join('');
@@ -691,15 +772,20 @@
     r.hard.forEach(h => {
       rows.push(row(h.label, h.txt, h.ok ? 'ok' : 'bad'));
     });
-    rows.push(row('intitle 结果数', d.intitle === null ? '未填' : fmt(d.intitle), d.intitle === null ? 'muted' : 'muted'));
-    rows.push(row('KGR',
-      r.kgr === null ? '—' : r.kgr.toFixed(3),
-      r.kgr === null ? 'muted' : (r.kgrHigh ? 'bad' : 'ok'),
-      r.kgr === null ? '需同时填月搜索量' : (r.kgrHigh ? '高于门槛 ' + readRules().kgr : '低于门槛 ' + readRules().kgr)));
-    rows.push(row('前 10 构成',
-      d.serp ? SERP[d.serp] : '未选',
-      d.serp === 'inner' ? 'ok' : (d.serp === 'dedicated' ? 'bad' : (d.serp ? 'warn' : 'muted')),
-      d.serp === 'inner' ? '内页为主 = 没有专站 = 机会' : ''));
+    if(!r.isNew){
+      rows.push(row('intitle 结果数', d.intitle === null ? '未填' : fmt(d.intitle), 'muted'));
+      rows.push(row('KGR',
+        r.kgr === null ? '—' : r.kgr.toFixed(3),
+        r.kgr === null ? 'muted' : (r.kgrHigh ? 'bad' : 'ok'),
+        r.kgr === null ? '需同时填月搜索量' : (r.kgrHigh ? '高于门槛 ' + readRules().kgr : '低于门槛 ' + readRules().kgr)));
+      rows.push(row('前 10 构成',
+        d.serp ? SERP[d.serp] : '未选',
+        d.serp === 'inner' ? 'ok' : (d.serp === 'dedicated' ? 'bad' : (d.serp ? 'warn' : 'muted')),
+        d.serp === 'inner' ? '内页为主 = 没有专站 = 机会' : ''));
+    } else {
+      rows.push(row('Ahrefs KD', 'N/A', 'muted', '新词模式：不参与判定'));
+      rows.push(row('所需外链网站数', 'N/A', 'muted', '新词模式：不参与判定'));
+    }
     rows.push(row('品牌词 / Sitelinks',
       (d.brand?'是':'否') + ' / ' + (d.sitelinks?'有':'无'),
       (d.brand && readRules().brandVeto) || d.sitelinks ? 'bad' : 'ok'));
@@ -713,16 +799,18 @@
 
   function buildMarkdown(d, r, rules){
     const lvName = level === 'custom' ? '自定义' : PRESETS[level].name;
-    const sig = '档位' + lvName + ' KD<' + rules.kd + ' 外链<' + rules.ref +
+    const aiLimitTxt = (rules.allintitle != null ? rules.allintitle : (rules.ai != null ? rules.ai : 50));
+    const sig = (r.isNew ? '新词模式 allintitle≤' + aiLimitTxt + ' ' : '') +
+      '档位' + lvName + (r.isNew ? '' : ' KD<' + rules.kd + ' 外链<' + rules.ref) +
       ' 趋势硬' + (rules.trendHard ? '✓' : '✗') + ' 品牌' + (rules.brandVeto ? '✓' : '✗') +
       ' 风险≥' + (rules.riskGate || '关');
     const concl = (r.cls === 'reject' ? '❌ 砍' : r.cls === 'pass' ? '✅ 可做' : '⚠️ 待定') + '：' + r.reason;
     return '| 词 | ' + d.kw + ' | Trends | ' + TREND[d.trend] + ' | — | ' +
       (d.volume ? fmt(d.volume) + '/月' : '未估') + ' | ' + TREND[d.trend] + ' | ' +
       (d.intitle === null ? '未查' : fmt(d.intitle)) + ' | ' +
-      (r.kgr === null ? '—' : r.kgr.toFixed(3)) + ' | ' +
-      d.kd + (d.kd < rules.kd ? '' : ' (超)') + ' | ' +
-      fmt(d.ref) + (d.ref < rules.ref ? '' : ' (超)') + ' | ' +
+      (r.isNew ? '—' : (r.kgr === null ? '—' : r.kgr.toFixed(3))) + ' | ' +
+      (r.isNew ? 'N/A（新词）' : d.kd + (d.kd < rules.kd ? '' : ' (超)')) + ' | ' +
+      (r.isNew ? 'N/A' : fmt(d.ref) + (d.ref < rules.ref ? '' : ' (超)')) + ' | ' +
       (d.serp ? SERP[d.serp] + (d.sitelinks ? '，有 Sitelinks' : '') : '未查') + ' | ' +
       (d.domainOk ? '可' : '不可') + ' | ' + concl + ' 〔' + sig + '〕 |';
   }
@@ -756,10 +844,10 @@
     let hint = '';
     for(const k of others){
       const p = PRESETS[k];
-      const rr = evaluate(d, {kd:p.kd, ref:p.ref, kgr:p.kgr, trendHard:p.trendHard, brandVeto:p.brandVeto, riskGate:p.riskGate});
+      const rr = evaluate(d, {kd:p.kd, ref:p.ref, kgr:p.kgr, allintitle:p.ai, trendHard:p.trendHard, brandVeto:p.brandVeto, riskGate:p.riskGate});
       if(r.cls === 'reject' && rr.cls !== 'reject'){
         hint = '同一份数据在 <b>' + p.name + ' 档</b>下为「' + (rr.cls === 'pass' ? '通过' : '待定') +
-          '」。与当前档位的关键差距为：' + gapText(r, p) + '。是否采用更宽松的标准，取决于可获取的外链资源。';
+          '」。与当前档位的关键差距为：' + gapText(r, p, d) + '。是否采用更宽松的标准，取决于可获取的资源条件。';
         break;
       }
     }
@@ -778,16 +866,21 @@
 
     // 记录（只有用户主动判定时才入历史，切档位/自动重算不污染）
     if(explicit){
-      addHistory({kw: d.kw, data: d, rules: rules, cls: r.cls, label: r.label, level: level, md: md});
+      addHistory({kw: d.kw, data: d, rules: rules, cls: r.cls, label: r.label, level: level, md: md, isNew: d.isNew});
     }
     saveDraft();
   }
 
-  function gapText(r, p){
-    const d = readData();
+  function gapText(r, p, data){
+    const d = data || readData();
     const parts = [];
-    if(d.kd >= p.kd) parts.push('KD ' + d.kd + ' vs <' + p.kd);
-    if(d.ref >= p.ref) parts.push('外链 ' + d.ref + ' vs <' + p.ref);
+    if(d.isNew){
+      if(d.intitle !== null && d.intitle > p.ai) parts.push('allintitle ' + d.intitle + ' vs ≤' + p.ai);
+      if(d.serp === 'dedicated') parts.push('前 10 已被独立站点占据');
+    } else {
+      if(d.kd >= p.kd) parts.push('KD ' + d.kd + ' vs <' + p.kd);
+      if(d.ref >= p.ref) parts.push('外链 ' + d.ref + ' vs <' + p.ref);
+    }
     return parts.length ? parts.join('、') : '风险项数量';
   }
   function escapeHtml(s){
@@ -820,8 +913,11 @@
     F.kw.value = d.kw; F.intitle.value = d.intitle ?? ''; F.volume.value = d.volume ?? '';
     F.kd.value = d.kd; F.ref.value = d.ref; F.trend.value = d.trend; F.serp.value = d.serp;
     F.brand.checked = d.brand; F.sitelinks.checked = d.sitelinks; F.domain.checked = d.domainOk;
+    F.sNew.checked = !!h.isNew;
+    syncNewMode();
     F.tKd.value = h.rules.kd; F.tRef.value = h.rules.ref; F.tKgr.value = h.rules.kgr;
     F.sBrand.checked = h.rules.brandVeto; F.sTrend.checked = h.rules.trendHard;
+    if(h.rules.allintitle) F.tAI.value = h.rules.allintitle;
     F.sRisk.checked = h.rules.riskGate > 0;
     if(h.rules.riskGate > 0) F.tRisk.value = h.rules.riskGate;
     level = h.level;
@@ -852,6 +948,7 @@
     const p = PRESETS[lv]; if(!p) return;
     level = lv;
     F.tKd.value = p.kd; F.tRef.value = p.ref; F.tKgr.value = p.kgr;
+    if(F.tAI) F.tAI.value = p.ai;
     F.sBrand.checked = p.brandVeto; F.sTrend.checked = p.trendHard; F.sRisk.checked = p.riskGate > 0;
     if(p.riskGate > 0) F.tRisk.value = p.riskGate;
     syncLevelUI();
@@ -889,7 +986,14 @@
   let judged = false;
   function autoJudge(){ if(judged) judge(false); }
 
-  ['tKd','tRef','tKgr','sBrand','sTrend','sRisk','tRisk'].forEach(id => {
+  F.sNew.addEventListener('change', () => {
+    syncNewMode();
+    scheduleDraft();
+    if(judged) judge(false);
+    toast(F.sNew.checked ? '已切换为新词模式：KD 与外链数不参与判定' : '已切回常规模式：KD 与外链数恢复参与判定');
+  });
+
+  ['tKd','tRef','tKgr','tAI','sBrand','sTrend','sRisk','tRisk'].forEach(id => {
     const el = $(id);
     el.addEventListener('change', () => { markCustom(); scheduleDraft(); autoJudge(); });
     el.addEventListener('input', () => { markCustom(); scheduleDraft(); autoJudge(); });
@@ -930,13 +1034,16 @@
     $('mdWrap').style.display = 'none'; $('verdictAside').textContent = '';
     $('ocrStatus').textContent = ''; $('ocrStatus').className = '';
     const img = $('drop').querySelector('img'); if(img){ URL.revokeObjectURL(img.src); img.remove(); }
-    judged = false; localStorage.removeItem(DRAFT_KEY); syncTools();
+    judged = false; localStorage.removeItem(DRAFT_KEY);
+    F.sNew.checked = false; if(F.tAI) F.tAI.value = 50;
+    syncNewMode(); syncTools();
     toast('输入已清空，历史记录保留');
   });
 
   /* 示例 */
   $('btnDemo').addEventListener('click', () => {
     applyLevel('strict', true);
+    F.sNew.checked = false; syncNewMode();
     F.kw.value = 'random country generator';
     F.intitle.value = 1400; F.volume.value = ''; F.kd.value = 54; F.ref.value = 99;
     F.trend.value = 'declining'; F.serp.value = 'dedicated';
@@ -959,7 +1066,7 @@
   function saveDraft(){
     try{
       const d = readData();
-      localStorage.setItem(DRAFT_KEY, JSON.stringify({d, rules: readRules(), level}));
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({d, rules: readRules(), level, isNew: F.sNew.checked}));
     }catch(_){}
   }
   function restoreDraft(){
@@ -972,8 +1079,10 @@
       F.kd.value = d.kd ?? ''; F.ref.value = d.ref ?? '';
       F.trend.value = d.trend || ''; F.serp.value = d.serp || '';
       F.brand.checked = !!d.brand; F.sitelinks.checked = !!d.sitelinks; F.domain.checked = d.domainOk !== false;
+      F.sNew.checked = !!s.isNew;
       if(s.rules){
         F.tKd.value = s.rules.kd ?? 10; F.tRef.value = s.rules.ref ?? 10; F.tKgr.value = s.rules.kgr ?? 0.25;
+        if(s.rules.allintitle) F.tAI.value = s.rules.allintitle;
         F.sBrand.checked = !!s.rules.brandVeto; F.sTrend.checked = !!s.rules.trendHard;
         F.sRisk.checked = s.rules.riskGate > 0;
         if(s.rules.riskGate > 0) F.tRisk.value = s.rules.riskGate;
@@ -1085,6 +1194,7 @@
   /* ============ 初始化 ============ */
   const restored = restoreDraft();
   syncLevelUI();
+  syncNewMode();
   syncTools();
   if(restored){
     const v = validate(true);
