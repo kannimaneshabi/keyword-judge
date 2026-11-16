@@ -9,20 +9,20 @@
   *,*::before,*::after{box-sizing:border-box}
   html,body{margin:0;padding:0}
   :root{
-    --ink:#0f151c; --ink2:#46525f; --ink3:#7d8896; --ink4:#a4aebb;
+    --ink:#0f151c; --ink2:#46525f; --ink3:#7d8896; --ink4:#79838f;
     --line:#e3e8ee; --line2:#eef2f6; --bg:#f6f8fa; --card:#fff;
     --pass:#1a7a51; --passbg:#ecf7f1; --passbd:#cde9db;
     --reject:#a9382d; --rejectbg:#fceeec; --rejectbd:#f0d4cf;
     --review:#96690f; --reviewbg:#fdf6e6; --reviewbd:#efdfbc;
-    --accent:#1c5d86; --accentbg:#eef5fa;
+    --accent:#1c5d86; --accentbg:#eef5fa; --ease:cubic-bezier(.22,1,.36,1);
     --auto:#8a6a12; --autobg:#fdf8e6;
-    --r:13px;
+    --r:14px;
     --shadow:0 1px 2px rgba(16,24,40,.04), 0 6px 18px -8px rgba(16,24,40,.10);
   }
   body{
     background:var(--bg); color:var(--ink);
     font:15px/1.62 -apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Helvetica Neue",sans-serif;
-    -webkit-font-smoothing:antialiased; padding:28px 22px 72px;
+    -webkit-font-smoothing:antialiased; padding:24px 24px 64px;
   }
   .wrap{max-width:1180px;margin:0 auto}
   button{font:inherit}
@@ -51,12 +51,15 @@
   kbd{font:11px ui-monospace,SFMono-Regular,Menlo,monospace;background:#f0f3f7;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 5px;color:var(--ink2)}
 
   /* ---------- layout ---------- */
-  .cols{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);gap:18px;align-items:start}
-  @media (max-width:960px){ .cols{grid-template-columns:1fr} }
-  .right{position:sticky;top:18px}
-  @media (max-width:960px){ .right{position:static} }
+  .cols{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);gap:20px;align-items:start}
+  @media (max-width:960px){ .cols{grid-template-columns:minmax(0,1fr)} }
+  .right{display:flex;flex-direction:column;gap:16px}
+  .right > .card:last-child{flex:1;display:flex;flex-direction:column}
+  .right > .card:last-child .empty-tip{margin-top:auto;margin-bottom:auto;padding:8px 0}
+  @media (max-width:960px){ .right{position:static}
+    .rows td:last-child{text-align:left} }
 
-  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:18px 20px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:20px 24px}
   .card + .card{margin-top:14px}
   .card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:15px}
   .card-h h2{margin:0;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);font-weight:680}
@@ -65,7 +68,7 @@
   /* ---------- level switch ---------- */
   .lvl-card{padding:16px 18px}
   .lvl-row{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
-  .seg{display:inline-flex;background:#eff3f7;border-radius:10px;padding:3px;gap:2px}
+  .seg{display:inline-flex;background:#eef2f6;border-radius:9px;padding:4px;gap:4px}
   .seg button{
     font-size:13.5px;font-weight:650;padding:7px 20px;border:0;background:transparent;color:var(--ink2);
     border-radius:8px;cursor:pointer;transition:.13s;position:relative;
@@ -79,9 +82,9 @@
   .lvl-note .mine{color:var(--auto)}
 
   /* ---------- form ---------- */
-  .field{margin-bottom:13px}
+  .field{margin-bottom:12px}
   .field:last-child{margin-bottom:0}
-  .fl{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--ink2);margin-bottom:5px;flex-wrap:wrap}
+  .fl{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:500;color:var(--ink2);margin-bottom:6px;flex-wrap:wrap}
   .lk{
     margin-left:auto;display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:6px;
     border:1px solid #cfe0ec;background:var(--accentbg);color:var(--accent);
@@ -133,10 +136,10 @@
   .sw-line .on-txt{color:var(--ink4);font-weight:400}
   .sw-line input:checked ~ .on-txt{color:var(--accent);font-weight:600}
   .err.on{display:block}
-  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:13px}
-  @media (max-width:600px){ .grid2{grid-template-columns:1fr} }
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:600px){ .grid2{grid-template-columns:minmax(0,1fr)} }
   .span2{grid-column:1/-1}
-  .sep{display:flex;align-items:center;gap:10px;color:var(--ink4);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;margin:6px 0 0}
+  .sep{display:flex;align-items:center;gap:10px;color:var(--ink3);font-size:11.5px;letter-spacing:0;margin:12px 0 4px}
   .sep::before,.sep::after{content:"";flex:1;height:1px;background:var(--line2)}
 
   /* tooltip */
@@ -247,7 +250,13 @@
   .tg-t input[type=number]{width:48px;padding:2px 5px;font-size:11.5px;margin:0 3px;vertical-align:middle;min-height:24px}
 
   /* ---------- result ---------- */
-  .verdict{border-radius:11px;padding:15px 17px;border:1px solid transparent;margin-bottom:13px}
+  .verdict{border-radius:10px;padding:16px 20px;border:1px solid transparent;margin-bottom:16px}
+  .gauge{margin:0 0 4px}
+  .g-track{position:relative;height:6px;border-radius:3px;background:#e8edf2}
+  .g-zone{position:absolute;left:0;top:0;height:6px;border-radius:3px;background:var(--accent);opacity:.22}
+  .g-mark{position:absolute;top:-4px;width:2px;height:14px;border-radius:1px;background:var(--ink);transform:translateX(-1px)}
+  .g-mark::after{content:"";position:absolute;top:-3px;left:-2.5px;width:7px;height:7px;border-radius:50%;background:var(--ink)}
+  .g-scale{display:flex;justify-content:space-between;margin-top:7px;font-size:11px;color:var(--ink3);font-variant-numeric:tabular-nums}
   .verdict.pass{background:var(--passbg);border-color:var(--passbd)}
   .verdict.reject{background:var(--rejectbg);border-color:var(--rejectbd)}
   .verdict.review{background:var(--reviewbg);border-color:var(--reviewbd)}
@@ -255,7 +264,7 @@
   .verdict.warn2{background:#fdf7f6;border-color:var(--rejectbd)}
   .vtop{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
   .vicon{width:20px;height:20px;flex:0 0 auto}
-  .vbadge{font-size:19px;font-weight:700;letter-spacing:-.015em}
+  .vbadge{font-size:18px;font-weight:600;letter-spacing:-.01em}
   .pass .vbadge{color:var(--pass)} .reject .vbadge,.warn2 .vbadge{color:var(--reject)}
   .review .vbadge{color:var(--review)} .empty .vbadge{color:var(--ink3)}
   .vkw{font-size:12.5px;color:var(--ink2);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;word-break:break-all}
@@ -263,19 +272,19 @@
   .vhint{margin-top:9px;padding-top:9px;border-top:1px dashed rgba(0,0,0,.08);font-size:12px;color:var(--ink2);line-height:1.6}
   .vhint b{font-weight:650}
 
-  .chips{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:15px}
-  .chip{border:1px solid var(--line);border-radius:9px;padding:7px 8px;text-align:center;background:#fbfcfd;transition:.13s}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+  .chip{display:inline-flex;align-items:baseline;gap:6px;border:1px solid var(--line);border-radius:7px;padding:4px 10px;background:#fbfcfd;transition:background .15s var(--ease),border-color .15s var(--ease)}
   .chip .l{display:block;font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);margin-bottom:1px}
   .chip .v{font-size:12.5px;font-weight:700}
   .chip.pass{background:var(--passbg);border-color:var(--passbd)} .chip.pass .v{color:var(--pass)}
   .chip.reject{background:var(--rejectbg);border-color:var(--rejectbd)} .chip.reject .v{color:var(--reject)}
   .chip.review{background:var(--reviewbg);border-color:var(--reviewbd)} .chip.review .v{color:var(--review)}
-  .chip.cur{box-shadow:0 0 0 2px rgba(28,93,134,.4)}
+  .chip.cur{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
 
   table.rows{width:100%;border-collapse:collapse;font-size:13px}
   table.rows tr{border-bottom:1px solid var(--line2)}
   table.rows tr:last-child{border-bottom:none}
-  table.rows td{padding:7px 0;vertical-align:top}
+  table.rows td{padding:7px 0;vertical-align:top;overflow-wrap:anywhere}
   table.rows td.k{color:var(--ink2);width:43%}
   table.rows td.v{text-align:right;font-variant-numeric:tabular-nums;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:600}
   .ok{color:var(--pass)} .bad{color:var(--reject)} .warn{color:var(--review)} .muted{color:var(--ink4);font-weight:400}
@@ -532,6 +541,10 @@ example.org/page-without-protocol"></textarea>
         <div class="verdict empty" id="verdict">
           <div class="vtop"><span class="vbadge" id="vBadge">待输入</span><span class="vkw" id="vKw"></span></div>
           <div class="vreason" id="vReason">填写必填项后点击「判定」，或按 <kbd>⌘↵</kbd>。</div>
+        </div>
+        <div class="gauge" id="kdGauge" style="display:none">
+          <div class="g-track"><span class="g-zone" id="gZone"></span><span class="g-mark" id="gMark"></span></div>
+          <div class="g-scale"><span>KD 0</span><span id="gThr">阈值 10</span><span>100</span></div>
         </div>
         <div class="vhint" id="vHint" style="display:none"></div>
         <div class="chips" id="chips"></div>
@@ -935,6 +948,21 @@ example.org/page-without-protocol"></textarea>
       (note ? '<span class="note">' + note + '</span>' : '') + '</td></tr>';
   }
 
+  // 把当前 KD 画在 0—100 的刻度上，前段浅色区是阈值内的可做区
+  function renderGauge(d, r, rules){
+    const g = $('kdGauge');
+    if(!g) return;
+    if(r.isNew || d.kd === null || d.kd === undefined || Number.isNaN(d.kd)){
+      g.style.display = 'none';
+      return;
+    }
+    const lim = Number(rules.kd) || 10;
+    g.style.display = 'block';
+    $('gMark').style.left = Math.max(0, Math.min(100, d.kd)) + '%';
+    $('gZone').style.width = Math.max(0, Math.min(100, lim)) + '%';
+    $('gThr').textContent = '阈值 ' + lim;
+  }
+
   function judge(explicit){
     const v = validate(true);
     if(!v.ok){
@@ -945,6 +973,7 @@ example.org/page-without-protocol"></textarea>
         '<div class="vreason" id="vReason">有 ' + v.names.length + ' 项需要修正：' + v.names.join('、') + '。已在左侧标红。</div>';
       $('vHint').style.display = 'none';
       $('chips').innerHTML = ''; $('rows').innerHTML = '';
+      if($('kdGauge')) $('kdGauge').style.display = 'none';
       $('verdictAside').textContent = '';
       toast('请先修正标记为错误的字段');
       return;
@@ -978,6 +1007,7 @@ example.org/page-without-protocol"></textarea>
 
     $('chips').innerHTML = renderChips(d);
     renderRows(r);
+    renderGauge(d, r, rules);
 
     $('verdictAside').textContent = (level === 'custom' ? '自定义规则' : PRESETS[level].name + '档');
 
@@ -1204,6 +1234,7 @@ example.org/page-without-protocol"></textarea>
       '<div class="vreason" id="vReason">填写必填项后点击「判定」，或按 <kbd>⌘↵</kbd>。</div>';
     $('vHint').style.display = 'none'; $('chips').innerHTML = ''; $('rows').innerHTML = '';
     $('verdictAside').textContent = '';
+    if($('kdGauge')) $('kdGauge').style.display = 'none';
     $('ocrStatus').textContent = ''; $('ocrStatus').className = '';
     judged = false; localStorage.removeItem(DRAFT_KEY);
     F.sNew.checked = false; if(F.tAI) F.tAI.value = 50;
