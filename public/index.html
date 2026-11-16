@@ -281,12 +281,6 @@
   .ok{color:var(--pass)} .bad{color:var(--reject)} .warn{color:var(--review)} .muted{color:var(--ink4);font-weight:400}
   td .note{display:block;font-weight:400;font-family:inherit;font-size:11px;color:var(--ink3);margin-top:1px}
 
-  .mdbox{margin-top:14px;padding-top:13px;border-top:1px solid var(--line2)}
-  .mdbox textarea{
-    width:100%;min-height:84px;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:#fbfcfd;
-    font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--ink2);resize:vertical;
-  }
-  .md-actions{display:flex;gap:8px;align-items:center;margin-top:8px}
 
   /* history */
   .hist{list-style:none;margin:0;padding:0;max-height:242px;overflow:auto}
@@ -324,7 +318,7 @@
       <p class="sub">填写实测数据，输出「通过 / 待定 / 淘汰」结论与逐项依据。支持三档标准切换，判定规则均可追溯至公开教程。</p>
     </div>
     <div class="top-actions">
-      <button class="btn" id="btnDemo" type="button">载入示例</button>
+      <button class="btn" id="btnDemo" type="button" title="载入一组公开关键词的实测数据，用于演示判定过程">载入示例</button>
       <button class="btn danger" id="btnClear" type="button">清空</button>
     </div>
   </div>
@@ -352,7 +346,7 @@
             <label class="fl" for="kw">关键词 <span class="req">*</span>
               <button class="q" type="button" aria-label="关键词填写说明">?<span class="bub"><b>填写方式：</b>从 Google Trends 或搜索结果中原样复制英文关键词。<br>请勿翻译或添加引号；单数与复数视为不同关键词，应使用用户真实搜索时的写法。</span></button>
             </label>
-            <input type="text" id="kw" placeholder="random country generator" autocomplete="off" spellcheck="false">
+            <input type="text" id="kw" placeholder="例如 pdf to word converter" autocomplete="off" spellcheck="false">
             <div class="err" id="kw-err"></div>
           </div>
 
@@ -427,13 +421,12 @@
               <span class="tp-title">SERP 抓取分析</span>
               <button class="tp-x" type="button" id="btnSerpClose" aria-label="收起">×</button>
             </div>
-            <textarea id="serpUrls" spellcheck="false" placeholder="每行一个 URL，例如：
-https://presetseditor.com/
-https://capcut.com/create/tiktok-video-editor
-reddit.com/r/capcut"></textarea>
+            <textarea id="serpUrls" spellcheck="false" placeholder="每行粘贴一个搜索结果 URL，按排名顺序填写：
+https://example.com/
+https://example.com/blog/some-article
+example.org/page-without-protocol"></textarea>
             <div class="serp-bar">
               <button class="btn sm primary" type="button" id="btnSerpRun">开始分析</button>
-              <button class="btn sm" type="button" id="btnSerpFill">示例</button>
               <span class="ocr-msg" id="serpStatus"></span>
             </div>
             <div id="serpResult" class="tresult"></div>
@@ -484,7 +477,7 @@ reddit.com/r/capcut"></textarea>
           <div class="field span2">
             <label class="fl">附加标记 <span class="opt">可选</span></label>
             <label class="chk"><input type="checkbox" id="brand"> <span>品牌词 / 官方产品名</span>
-              <button class="q" type="button" aria-label="品牌词判断说明">?<span class="bub"><b>判断方式：</b>搜索第 1 名是否就是这个词所指的产品官网（如 canva → canva.com、capcut → capcut.com）。<br>勾选后默认一票否决：用户想找的就是那个产品，新站抢不到首位。<br>只在关键词<b>本身</b>是产品名或公司名时勾；关键词里顺带含品牌名（如 preset editor capcut）不算。</span></button>
+              <button class="q" type="button" aria-label="品牌词判断说明">?<span class="bub"><b>判断方式：</b>搜索第 1 名是否就是这个词所指的产品官网（如 canva → canva.com、notion → notion.so）。<br>勾选后默认一票否决：用户想找的就是那个产品，新站抢不到首位。<br>只在关键词<b>本身</b>是产品名或公司名时勾；关键词里顺带含品牌名（如「best <品牌名> alternatives」）不算。</span></button>
             </label>
             <label class="chk"><input type="checkbox" id="sitelinks"> <span>前 10 有 Sitelinks</span>
               <button class="q" type="button" aria-label="Sitelinks 判断说明">?<span class="bub"><b>判断方式：</b>某条结果的标题下方挂着一排缩进的站内链接（通常 2—6 条，如「价格 / 下载 / 帮助」）。<br>出现即勾选：谷歌据此认定「用户搜这个词就是想找这个站」。<br>移动端不显示 Sitelinks，需看桌面结果。</span></button>
@@ -543,16 +536,6 @@ reddit.com/r/capcut"></textarea>
         <div class="vhint" id="vHint" style="display:none"></div>
         <div class="chips" id="chips"></div>
         <table class="rows" id="rows"></table>
-        <div class="mdbox" id="mdWrap" style="display:none">
-          <label class="fl" for="md">选词记录行（13 列，对应表 B）
-            <button class="q" type="button" aria-label="记录行用途说明">?<span class="bub"><b>用途：</b>把本次判定压成一行表格记录，粘进 <code>docs/选词工作台.md</code> 的表 B，形成候选词台账。<br><b>为什么值得记：</b>三个月后回看，能知道当时填的数值和判定依据，而不是只剩一个「做过、砍了」的印象。<br><b>注意：</b>来源、出现时间、对比倍数三列属找词阶段信息，本工具不采集，粘贴后按需手填。</span></button>
-          </label>
-          <textarea id="md" readonly></textarea>
-          <div class="md-actions">
-            <button class="btn sm" id="btnCopy" type="button">复制这一行</button>
-            <span style="font-size:11.5px;color:var(--ink4)">列顺序与表 B 一致，末尾含档位与规则签名</span>
-          </div>
-        </div>
       </div>
 
       <div class="card">
@@ -952,35 +935,6 @@ reddit.com/r/capcut"></textarea>
       (note ? '<span class="note">' + note + '</span>' : '') + '</td></tr>';
   }
 
-  // 输出一行，列顺序严格对应 docs/选词工作台.md 表 B（13 列）
-  function buildMarkdown(d, r, rules){
-    const lvName = level === 'custom' ? '自定义' : PRESETS[level].name;
-    const aiLimitTxt = (rules.allintitle != null ? rules.allintitle : (rules.ai != null ? rules.ai : 50));
-    const sig = (r.isNew ? '新词模式 allintitle≤' + aiLimitTxt + ' ' : '') +
-      '档位' + lvName + (r.isNew ? '' : ' KD<' + rules.kd + ' 外链<' + rules.ref) +
-      ' 趋势硬' + (rules.trendHard ? '✓' : '✗') + ' 品牌' + (rules.brandVeto ? '✓' : '✗') +
-      ' 风险≥' + (rules.riskGate || '关');
-    const concl = (r.cls === 'reject' ? '❌ 砍' : r.cls === 'pass' ? '✅ 可做' : '⚠️ 待定') + '：' + r.reason;
-
-    const cells = [
-      d.kw,                                                 // 1  关键词
-      '—',                                                  // 2  来源（找词阶段信息）
-      '—',                                                  // 3  出现时间（同上）
-      '—',                                                  // 4  对比倍数（同上）
-      d.volume === null ? '—' : fmt(d.volume),              // 5  估算日搜索量
-      TREND[d.trend] || '—',                                // 6  趋势形态
-      d.intitle === null ? '未查' : fmt(d.intitle),          // 7  intitle 结果数
-      r.isNew || r.kgr === null ? '—' : r.kgr.toFixed(3),   // 8  KGR
-      r.isNew ? 'N/A（新词）' : String(d.kd),                // 9  KD
-      r.isNew ? 'N/A' : fmt(d.ref),                         // 10 所需外链站数
-      d.serp ? SERP[d.serp] + (d.sitelinks ? '，有 Sitelinks' : '') : '未查',  // 11 前 10 概况
-      d.domainOk ? '可' : '不可',                             // 12 .com 可注册
-      concl + ' 〔' + sig + '〕'                             // 13 结论
-    ];
-    // 单元格内的竖线会破坏表格结构，需转义
-    return '| ' + cells.map(c => String(c).replace(/\|/g, '\\|')).join(' | ') + ' |';
-  }
-
   function judge(explicit){
     const v = validate(true);
     if(!v.ok){
@@ -990,7 +944,7 @@ reddit.com/r/capcut"></textarea>
       box.innerHTML = '<div class="vtop"><span class="vbadge" id="vBadge">校验未通过</span></div>' +
         '<div class="vreason" id="vReason">有 ' + v.names.length + ' 项需要修正：' + v.names.join('、') + '。已在左侧标红。</div>';
       $('vHint').style.display = 'none';
-      $('chips').innerHTML = ''; $('rows').innerHTML = ''; $('mdWrap').style.display = 'none';
+      $('chips').innerHTML = ''; $('rows').innerHTML = '';
       $('verdictAside').textContent = '';
       toast('请先修正标记为错误的字段');
       return;
@@ -1025,14 +979,11 @@ reddit.com/r/capcut"></textarea>
     $('chips').innerHTML = renderChips(d);
     renderRows(r);
 
-    const md = buildMarkdown(d, r, rules);
-    $('md').value = md;
-    $('mdWrap').style.display = 'block';
     $('verdictAside').textContent = (level === 'custom' ? '自定义规则' : PRESETS[level].name + '档');
 
     // 记录（只有用户主动判定时才入历史，切档位/自动重算不污染）
     if(explicit){
-      addHistory({kw: d.kw, data: d, rules: rules, cls: r.cls, label: r.label, level: level, md: md, isNew: d.isNew});
+      addHistory({kw: d.kw, data: d, rules: rules, cls: r.cls, label: r.label, level: level, isNew: d.isNew});
     }
     saveDraft();
   }
@@ -1055,6 +1006,7 @@ reddit.com/r/capcut"></textarea>
 
   /* ============ 记录 ============ */
   function addHistory(item){
+    if(!item.ts) item.ts = Date.now();
     const i = history.findIndex(h => h.kw.toLowerCase() === item.kw.toLowerCase() && h.level === item.level);
     if(i >= 0) history.splice(i, 1);
     history.unshift(item);
@@ -1093,19 +1045,57 @@ reddit.com/r/capcut"></textarea>
     toast('已回填该条记录');
   });
 
+  // 导出：从记录数据现场生成，不依赖任何页面上的中间产物
+  function fmtTs(ts){
+    if(!ts) return '—';
+    const t = new Date(ts), pad = n => String(n).padStart(2, '0');
+    return pad(t.getMonth() + 1) + '-' + pad(t.getDate()) + ' ' + pad(t.getHours()) + ':' + pad(t.getMinutes());
+  }
+
+  function historyRowMarkdown(h, idx){
+    const d = h.data, isNew = !!h.isNew;
+    const kgr = (!isNew && d.intitle !== null && d.volume) ? (d.intitle / d.volume).toFixed(3) : '—';
+    const cells = [
+      String(idx + 1),
+      h.kw,
+      fmtTs(h.ts),
+      TREND[d.trend] || '—',
+      d.intitle === null ? '未查' : fmt(d.intitle),
+      kgr,
+      isNew ? 'N/A（新词）' : String(d.kd),
+      isNew ? 'N/A' : fmt(d.ref),
+      d.serp ? SERP[d.serp] + (d.sitelinks ? '，有 Sitelinks' : '') : '未查',
+      d.domainOk ? '可' : '不可',
+      h.label,
+      h.level === 'custom' ? '自定义' : PRESETS[h.level].name
+    ];
+    return '| ' + cells.map(c => String(c).replace(/\|/g, '\\|')).join(' | ') + ' |';
+  }
+
   $('btnExport').addEventListener('click', () => {
     if(!history.length) return;
-    const head = '| # | 关键词 | 结论 | 档位 | 规则 |\n| --- | --- | --- | --- | --- |\n';
-    const body = history.map((h, i) => '| ' + (i+1) + ' | ' + h.kw + ' | ' + h.label + ' | ' +
-      (h.level === 'custom' ? '自定义' : PRESETS[h.level].name) + ' | KD<' + h.rules.kd +
-      ' 外链<' + h.rules.ref + ' |').join('\n');
-    const blob = new Blob([head + body + '\n\n---\n\n' + history.map(h => h.md).join('\n')], {type:'text/markdown'});
+    const sorted = history.slice().sort((a, b) => (a.ts || 0) - (b.ts || 0));
+    const head = '# 关键词判定记录\n\n' +
+      '| # | 关键词 | 判定时间 | 趋势形态 | intitle 结果数 | KGR | KD | 所需外链站数 | 前 10 概况 | .com 可注册 | 结论 | 档位 |\n' +
+      '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n';
+    const rows = sorted.map((h, i) => historyRowMarkdown(h, i)).join('\n');
+    const rules = sorted.map((h, i) => {
+      const r = h.rules;
+      const aiTxt = (r.allintitle != null ? r.allintitle : 50);
+      return '- 第 ' + (i + 1) + ' 条：' + h.kw +
+        '　门槛 KD<' + r.kd + '、外链<' + r.ref + '、KGR<' + r.kgr + '、allintitle≤' + aiTxt +
+        '；趋势硬指标' + (r.trendHard ? '开' : '关') +
+        '，品牌词否决' + (r.brandVeto ? '开' : '关') +
+        '，风险≥' + (r.riskGate || '不拦截');
+    }).join('\n');
+
+    const blob = new Blob([head + rows + '\n\n## 判定时使用的规则\n\n' + rules + '\n'], { type: 'text/markdown;charset=utf-8' });
     const a = document.createElement('a');
-    const d = new Date(); const pad = n => String(n).padStart(2,'0');
+    const d = new Date(); const pad = n => String(n).padStart(2, '0');
     a.href = URL.createObjectURL(blob);
-    a.download = 'keywords-' + d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) + '.md';
+    a.download = 'keyword-records-' + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + '.md';
     a.click();
-    setTimeout(()=>URL.revokeObjectURL(a.href), 3000);
+    setTimeout(() => URL.revokeObjectURL(a.href), 3000);
     toast('已导出 ' + history.length + ' 条记录');
   });
 
@@ -1199,7 +1189,13 @@ reddit.com/r/capcut"></textarea>
       return;
     }
     clearArm = 0; btn.textContent = '清空'; btn.classList.remove('primary');
-    ['kw','intitle','volume','kd','refdomains'].forEach(k => { F[k].value = ''; F[k].classList.remove('auto','invalid'); });
+    // 按 DOM id 清空，不依赖 F 的键名（F 中 refdomains 对应的键是 ref）
+    ['kw','intitle','volume','kd','refdomains'].forEach(id => {
+      const el = $(id);
+      if(!el) return;
+      el.value = '';
+      el.classList.remove('auto','invalid');
+    });
     F.trend.value = ''; F.serp.value = '';
     F.brand.checked = false; F.sitelinks.checked = false; F.domain.checked = true;
     clearErrs();
@@ -1207,9 +1203,8 @@ reddit.com/r/capcut"></textarea>
     $('verdict').innerHTML = '<div class="vtop"><span class="vbadge" id="vBadge">待输入</span></div>' +
       '<div class="vreason" id="vReason">填写必填项后点击「判定」，或按 <kbd>⌘↵</kbd>。</div>';
     $('vHint').style.display = 'none'; $('chips').innerHTML = ''; $('rows').innerHTML = '';
-    $('mdWrap').style.display = 'none'; $('verdictAside').textContent = '';
+    $('verdictAside').textContent = '';
     $('ocrStatus').textContent = ''; $('ocrStatus').className = '';
-    const img = $('drop').querySelector('img'); if(img){ URL.revokeObjectURL(img.src); img.remove(); }
     judged = false; localStorage.removeItem(DRAFT_KEY);
     F.sNew.checked = false; if(F.tAI) F.tAI.value = 50;
     syncNewMode(); syncTools();
@@ -1225,17 +1220,10 @@ reddit.com/r/capcut"></textarea>
     F.trend.value = 'declining'; F.serp.value = 'dedicated';
     F.brand.checked = false; F.sitelinks.checked = true; F.domain.checked = true;
     judged = true; clearErrs(); judge(true);
-    toast('已载入示例数据');
+    toast('已载入示例数据（公开关键词的实测值，仅用于演示判定逻辑）');
   });
 
   /* 复制 */
-  $('btnCopy').addEventListener('click', async () => {
-    const text = $('md').value;
-    try{ await navigator.clipboard.writeText(text); }
-    catch(_){ $('md').select(); document.execCommand('copy'); }
-    toast('已复制，可直接粘贴至记录表');
-  });
-
   /* ============ 草稿保存 ============ */
   let draftTimer = null;
   function scheduleDraft(){ clearTimeout(draftTimer); draftTimer = setTimeout(saveDraft, 400); }
@@ -1973,9 +1961,6 @@ reddit.com/r/capcut"></textarea>
     btn.addEventListener('click', e => {
       e.preventDefault(); e.stopPropagation();
       serpPanel.classList.add('on');
-      if(!serpUrlsEl.value.trim()){
-        serpUrlsEl.value = 'https://presetseditor.com/\nhttps://capcut.com/\nhttps://www.reddit.com/r/capcut/';
-      }
       serpUrlsEl.focus();
       serpUrlsEl.scrollIntoView({ block:'nearest', behavior:'smooth' });
     });
@@ -1985,9 +1970,6 @@ reddit.com/r/capcut"></textarea>
   $('btnSerpClose').addEventListener('click', () => {
     serpPanel.classList.remove('on');
     serpResult.classList.remove('on'); serpResult.innerHTML = ''; setSerpStatus('');
-  });
-  $('btnSerpFill').addEventListener('click', () => {
-    serpUrlsEl.value = 'https://presetseditor.com/\nhttps://capcut.com/\nhttps://www.reddit.com/r/capcut/';
   });
 
   // 附加标记里的「?」嵌在 label 内，需阻止其触发复选框

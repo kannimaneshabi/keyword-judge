@@ -107,6 +107,15 @@ export default {
     if (url.pathname === '/api/fetch-page') {
       if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors() });
       if (request.method !== 'GET') return json({ ok: false, error: '仅支持 GET' }, 405);
+
+      // 按访问者 IP 限流，防止单点刷爆额度（本地 dev 无此 binding 时自动跳过）
+      if (env.FETCH_LIMITER) {
+        const ip = request.headers.get('CF-Connecting-IP') || 'anonymous';
+        const { success } = await env.FETCH_LIMITER.limit({ key: ip });
+        if (!success) {
+          return json({ ok: false, error: '请求过于频繁，请稍后再试（每分钟最多 60 次）' }, 429);
+        }
+      }
       return handleProxy(url);
     }
 
