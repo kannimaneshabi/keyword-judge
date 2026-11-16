@@ -81,7 +81,16 @@
   /* ---------- form ---------- */
   .field{margin-bottom:13px}
   .field:last-child{margin-bottom:0}
-  .fl{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--ink2);margin-bottom:5px}
+  .fl{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--ink2);margin-bottom:5px;flex-wrap:wrap}
+  .lk{
+    margin-left:auto;display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:6px;
+    border:1px solid #cfe0ec;background:var(--accentbg);color:var(--accent);
+    font-size:11px;font-weight:600;line-height:1.5;cursor:pointer;transition:.12s;white-space:nowrap;
+  }
+  .lk:hover:not(:disabled){background:#e2eef7;border-color:#b8d3e5}
+  .lk:active:not(:disabled){transform:translateY(.5px)}
+  .lk:disabled{opacity:.5;cursor:not-allowed;background:#f3f6f9;border-color:var(--line);color:var(--ink4)}
+  .lk svg{width:9px;height:9px;flex:0 0 auto}
   .fl .req{color:var(--reject);font-weight:700}
   .fl .opt{font-weight:400;color:var(--ink4);font-size:11.5px}
   input[type=text],input[type=number],select{
@@ -276,6 +285,9 @@
           <div class="field">
             <label class="fl" for="kd">Ahrefs KD <span class="req">*</span>
               <button class="q" type="button" aria-label="KD 取数说明">?<span class="bub"><b>取值方式：</b>打开 <code>ahrefs.com/keyword-difficulty</code> 输入关键词，读取环形图显示的数值（0—100）。<br>该指标与 Semrush 的 KD 百分比算法不同，两者不宜直接比较。</span></button>
+              <button class="lk" type="button" data-tool="ahrefs" title="在 Ahrefs 查询该关键词的 KD 与外链需求">查 Ahrefs<svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 8L8 2M8 2H3.4M8 2v4.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            </label>
+            <input type="number" id="kd"</button>
             </label>
             <input type="number" id="kd" min="0" max="100" step="1" placeholder="54" inputmode="numeric">
             <div class="err" id="kd-err"></div>
@@ -284,6 +296,9 @@
           <div class="field">
             <label class="fl" for="refdomains">所需外链网站数 <span class="req">*</span>
               <button class="q" type="button" aria-label="外链数取数说明">?<span class="bub"><b>取值方式：</b>在同一 Ahrefs 页面读取 <code>…need followed backlinks from ~N websites</code>，取其中的 N。<br>相比 KD，该数值更直接地反映进入前 10 所需的外链规模。</span></button>
+              <button class="lk" type="button" data-tool="ahrefs" title="在 Ahrefs 查询该关键词的 KD 与外链需求">查 Ahrefs<svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 8L8 2M8 2H3.4M8 2v4.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            </label>
+            <input type="number" id="refdomains"</button>
             </label>
             <input type="number" id="refdomains" min="0" step="1" placeholder="99" inputmode="numeric">
             <div class="err" id="refdomains-err"></div>
@@ -292,6 +307,9 @@
           <div class="field">
             <label class="fl" for="trend">趋势形态 <span class="req">*</span>
               <button class="q" type="button" aria-label="趋势判定说明">?<span class="bub"><b>判断方式：</b>在 Trends 中分别查看 12 个月与 5 年区间。<br>仅个别月份有量 → 季节<br>短期冲高后归零 → 尖刺<br>整体持续走低 → 下降<br>全年稳定有量 → 平稳</span></button>
+              <button class="lk" type="button" data-tool="trends" title="在 Google Trends 查看该关键词的 12 个月走势">看 Trends<svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 8L8 2M8 2H3.4M8 2v4.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            </label>
+            <select id="trend"</button>
             </label>
             <select id="trend">
               <option value="">请选择…</option>
@@ -307,6 +325,9 @@
           <div class="field">
             <label class="fl" for="serp">前 10 名构成 <span class="req">*</span>
               <button class="q" type="button" aria-label="SERP 判定说明">?<span class="bub"><b>判断方式：</b>在 Google 搜索该关键词，观察前 10 名是「专注该词的独立站点首页」还是「大型站点的一个内页」。<br>以内页为主，说明尚无专门站点，属于可用空间。</span></button>
+              <button class="lk" type="button" data-tool="google" title="在 Google 搜索该关键词，查看前 10 名构成">看搜索结果<svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 8L8 2M8 2H3.4M8 2v4.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            </label>
+            <select id="serp"</button>
             </label>
             <select id="serp">
               <option value="">请选择…</option>
@@ -322,6 +343,9 @@
           <div class="field">
             <label class="fl" for="intitle">intitle 结果数 <span class="opt">可选</span>
               <button class="q" type="button" aria-label="intitle 取数说明">?<span class="bub"><b>取值方式：</b>在 Google 搜索 <code>intitle:"关键词"</code>（须带引号），点击搜索框下方「工具」，读取「找到约 X 条结果」。<br>未加引号时结果数会显著偏大，不可用于计算；该数值仅用于计算 KGR。</span></button>
+              <button class="lk" type="button" data-tool="google-intitle" title="在 Google 执行 intitle 查询，直接得到结果数">搜 intitle<svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 8L8 2M8 2H3.4M8 2v4.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            </label>
+            <input type="number" id="intitle"</button>
             </label>
             <input type="number" id="intitle" min="1" step="1" placeholder="1400" inputmode="numeric">
             <div class="err" id="intitle-err"></div>
@@ -467,6 +491,89 @@
     if(el) el.classList.toggle('invalid', !!msg);
   }
   function clearErrs(){ ['kw','intitle','volume','kd','refdomains','trend','serp'].forEach(k=>setErr(k,'')); }
+
+  /* ============ 快捷取数（跳转外部工具） ============ */
+  const TOOLS = {
+    // Ahrefs 免费工具不读取 URL 参数，无法预填；走「复制关键词 + 打开页面」
+    ahrefs:          { base:'https://ahrefs.com/keyword-difficulty', prefill:false },
+    trends:          { base:'https://trends.google.com/trends/explore?date=today%2012-m&hl=en&q=', prefill:true },
+    google:          { base:'https://www.google.com/search?hl=en&num=20&q=', prefill:true },
+    'google-intitle':{ base:'https://www.google.com/search?hl=en&num=20&q=', prefill:true, intitle:true }
+  };
+
+  // 关键词规范化：全角空格→半角、去零宽字符、折叠连续空白、去首尾引号、限长
+  function normalizeKw(raw){
+    let k = String(raw == null ? '' : raw);
+    k = k.replace(/\u3000/g, ' ').replace(/[\u200b-\u200d\ufeff]/g, '');
+    k = k.replace(/\s+/g, ' ').trim();
+    k = k.replace(/^["'\u201c\u201d\u2018\u2019]+|["'\u201c\u201d\u2018\u2019]+$/g, '').trim();
+    if(k.length > 200) k = k.slice(0, 200);
+    return k;
+  }
+
+  // 拼接目标链接：Google / Trends 支持 q 参数直接预填；引号由代码添加并整体编码
+  function buildToolUrl(tool, keyword){
+    const t = TOOLS[tool];
+    if(!t) throw new Error('unknown tool');
+    if(!t.prefill) return t.base;
+    const q = t.intitle ? 'intitle:"' + keyword.replace(/"/g, '') + '"' : keyword;
+    return t.base + encodeURIComponent(q);
+  }
+
+  function openUrl(url){
+    const a = document.createElement('a');
+    a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+
+  async function copyText(text){
+    try{
+      if(navigator.clipboard && window.isSecureContext){
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    }catch(_){ /* 落到下面的兜底 */ }
+    try{
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.setAttribute('readonly','');
+      ta.style.cssText = 'position:fixed;top:-1000px;left:0;opacity:0';
+      document.body.appendChild(ta); ta.select();
+      const ok = document.execCommand('copy');
+      ta.remove();
+      return !!ok;
+    }catch(_){ return false; }
+  }
+
+  async function openTool(tool){
+    const keyword = normalizeKw(F.kw.value);
+    if(!keyword){ toast('请先填写关键词'); F.kw.focus(); return; }
+
+    let url;
+    try{ url = buildToolUrl(tool, keyword); }
+    catch(_){ toast('链接生成失败，请手动访问对应站点'); return; }
+
+    if(tool === 'ahrefs'){
+      openUrl(url);
+      const copied = await copyText(keyword);
+      toast(copied ? '已打开 Ahrefs，关键词已复制，按 ⌘V 粘贴后回车'
+                   : '已打开 Ahrefs，请手动输入该关键词');
+      return;
+    }
+    openUrl(url);
+    toast(tool === 'trends' ? '已在 Google Trends 打开该关键词' : '已在 Google 打开查询结果');
+  }
+
+  function syncTools(){
+    const keyword = normalizeKw(F.kw.value);
+    document.querySelectorAll('.lk').forEach(btn => {
+      const t = TOOLS[btn.dataset.tool];
+      btn.disabled = !keyword;
+      if(!keyword){ btn.title = '请先在上方填写关键词'; return; }
+      btn.title = (t && t.prefill)
+        ? '在新标签页打开并自动填入该关键词'
+        : '复制关键词并打开 Ahrefs（该站不支持链接预填，需粘贴）';
+    });
+  }
 
   /* ============ 校验 ============ */
   function validate(needAll){
@@ -783,6 +890,7 @@
       if($(el.id + '-err')) setErr(el.id, '');
       if(el.classList.contains('auto') && NUM_FIELDS.indexOf(el.id) >= 0) el.classList.remove('auto');
       scheduleDraft();
+      syncTools();
       autoJudge();
     });
     el.addEventListener('change', () => { scheduleDraft(); autoJudge(); });
@@ -795,6 +903,15 @@
     const el = $(id);
     el.addEventListener('change', () => { markCustom(); scheduleDraft(); autoJudge(); });
     el.addEventListener('input', () => { markCustom(); scheduleDraft(); autoJudge(); });
+  });
+
+  document.querySelectorAll('.lk').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.preventDefault(); e.stopPropagation();
+      openTool(btn.dataset.tool);
+    });
+    // 阻止 label 把点击转成输入框聚焦
+    btn.addEventListener('mousedown', e => e.preventDefault());
   });
 
   $('btnJudge').addEventListener('click', () => { judged = true; judge(true); });
@@ -823,7 +940,7 @@
     $('mdWrap').style.display = 'none'; $('verdictAside').textContent = '';
     $('ocrStatus').textContent = ''; $('ocrStatus').className = '';
     const img = $('drop').querySelector('img'); if(img){ URL.revokeObjectURL(img.src); img.remove(); }
-    judged = false; localStorage.removeItem(DRAFT_KEY);
+    judged = false; localStorage.removeItem(DRAFT_KEY); syncTools();
     toast('输入已清空，历史记录保留');
   });
 
@@ -978,6 +1095,7 @@
   /* ============ 初始化 ============ */
   const restored = restoreDraft();
   syncLevelUI();
+  syncTools();
   if(restored){
     const v = validate(true);
     if(v.ok){ judged = true; judge(false); toast('已恢复上次输入并重新判定'); }
