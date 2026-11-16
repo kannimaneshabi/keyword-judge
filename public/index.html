@@ -228,10 +228,10 @@
         关键词判定器
       </div>
       <h1>一个词能不能做，用数字说话</h1>
-      <p class="sub">填实测数据 → 输出「通过 / 待定 / 淘汰」与逐项理由。三档标准可切，判定依据标注到原文行号。</p>
+      <p class="sub">填写实测数据，输出「通过 / 待定 / 淘汰」结论与逐项依据。支持三档标准切换，判定规则均可追溯至公开教程。</p>
     </div>
     <div class="top-actions">
-      <button class="btn" id="btnDemo" type="button">填入示例</button>
+      <button class="btn" id="btnDemo" type="button">载入示例</button>
       <button class="btn danger" id="btnClear" type="button">清空</button>
     </div>
   </div>
@@ -253,21 +253,21 @@
     <!-- 左 -->
     <div>
       <div class="card">
-        <div class="card-h"><h2>截图识别</h2><span class="aside">可选 · 识别结果需核对</span></div>
+        <div class="card-h"><h2>截图识别</h2><span class="aside">可选功能 · 识别结果需人工核对</span></div>
         <div class="drop" id="drop" tabindex="0" role="button" aria-label="上传截图">
           <div class="ic">⌘</div>
-          <b>点击选择 / 拖入 / 直接粘贴（⌘V）</b>
-          <small>对准 Ahrefs 的 KD 与「~N websites」、谷歌的「找到约 X 条结果」效果最好</small>
+          <b>点击选择、拖入或直接粘贴（⌘V）</b>
+          <small>对准 Ahrefs 的 KD 与 ~N websites、Google 结果页的「找到约 X 条结果」识别效果最佳</small>
         </div>
         <div id="ocrStatus"></div>
       </div>
 
       <div class="card">
-        <div class="card-h"><h2>实测数据</h2><span class="aside">带 <span style="color:var(--reject)">*</span> 为判定必需</span></div>
+        <div class="card-h"><h2>实测数据</h2><span class="aside">带 <span style="color:var(--reject)">*</span> 为必填项</span></div>
         <div class="grid2">
           <div class="field span2">
             <label class="fl" for="kw">关键词 <span class="req">*</span>
-              <button class="q" type="button" aria-label="关键词填写说明">?<span class="bub"><b>怎么填：</b>从 Trends 或搜索结果里原样复制英文词。<br>不要翻译、不加引号；单复数算两个词，按用户真实搜法填。</span></button>
+              <button class="q" type="button" aria-label="关键词填写说明">?<span class="bub"><b>填写方式：</b>从 Google Trends 或搜索结果中原样复制英文关键词。<br>请勿翻译或添加引号；单数与复数视为不同关键词，应使用用户真实搜索时的写法。</span></button>
             </label>
             <input type="text" id="kw" placeholder="random country generator" autocomplete="off" spellcheck="false">
             <div class="err" id="kw-err"></div>
@@ -275,7 +275,7 @@
 
           <div class="field">
             <label class="fl" for="kd">Ahrefs KD <span class="req">*</span>
-              <button class="q" type="button" aria-label="KD 取数说明">?<span class="bub"><b>怎么取：</b>打开 <code>ahrefs.com/keyword-difficulty</code> 输入词，看圆环里的数字（0—100）。<br>别和 Semrush 的 KD 百分比比大小，两家算法不同。</span></button>
+              <button class="q" type="button" aria-label="KD 取数说明">?<span class="bub"><b>取值方式：</b>打开 <code>ahrefs.com/keyword-difficulty</code> 输入关键词，读取环形图显示的数值（0—100）。<br>该指标与 Semrush 的 KD 百分比算法不同，两者不宜直接比较。</span></button>
             </label>
             <input type="number" id="kd" min="0" max="100" step="1" placeholder="54" inputmode="numeric">
             <div class="err" id="kd-err"></div>
@@ -283,7 +283,7 @@
 
           <div class="field">
             <label class="fl" for="refdomains">所需外链网站数 <span class="req">*</span>
-              <button class="q" type="button" aria-label="外链数取数说明">?<span class="bub"><b>怎么取：</b>同一个 Ahrefs 页面那句话 <code>…need followed backlinks from ~N websites</code>，取 N。<br>教程说这个数比 KD 本身更直观。</span></button>
+              <button class="q" type="button" aria-label="外链数取数说明">?<span class="bub"><b>取值方式：</b>在同一 Ahrefs 页面读取 <code>…need followed backlinks from ~N websites</code>，取其中的 N。<br>相比 KD，该数值更直接地反映进入前 10 所需的外链规模。</span></button>
             </label>
             <input type="number" id="refdomains" min="0" step="1" placeholder="99" inputmode="numeric">
             <div class="err" id="refdomains-err"></div>
@@ -291,7 +291,7 @@
 
           <div class="field">
             <label class="fl" for="trend">趋势形态 <span class="req">*</span>
-              <button class="q" type="button" aria-label="趋势判定说明">?<span class="bub"><b>怎么判：</b>Trends 分别拉 12 个月与 5 年。<br>只在某几个月有量 → 季节<br>一根尖刺后归零 → 尖刺<br>整体持续走低 → 下降<br>常年有量 → 平稳</span></button>
+              <button class="q" type="button" aria-label="趋势判定说明">?<span class="bub"><b>判断方式：</b>在 Trends 中分别查看 12 个月与 5 年区间。<br>仅个别月份有量 → 季节<br>短期冲高后归零 → 尖刺<br>整体持续走低 → 下降<br>全年稳定有量 → 平稳</span></button>
             </label>
             <select id="trend">
               <option value="">请选择…</option>
@@ -306,7 +306,7 @@
 
           <div class="field">
             <label class="fl" for="serp">前 10 名构成 <span class="req">*</span>
-              <button class="q" type="button" aria-label="SERP 判定说明">?<span class="bub"><b>怎么判：</b>谷歌搜这个词，看前 10 是「专做这个词的站的首页」还是「大站的一个内页」。<br>内页多 = 没人专门做 = 你的机会。</span></button>
+              <button class="q" type="button" aria-label="SERP 判定说明">?<span class="bub"><b>判断方式：</b>在 Google 搜索该关键词，观察前 10 名是「专注该词的独立站点首页」还是「大型站点的一个内页」。<br>以内页为主，说明尚无专门站点，属于可用空间。</span></button>
             </label>
             <select id="serp">
               <option value="">请选择…</option>
@@ -321,7 +321,7 @@
 
           <div class="field">
             <label class="fl" for="intitle">intitle 结果数 <span class="opt">可选</span>
-              <button class="q" type="button" aria-label="intitle 取数说明">?<span class="bub"><b>怎么取：</b>谷歌搜 <code>intitle:"你的词"</code>（带引号）→ 点搜索框下方「工具」→ 看右下角「找到约 X 条结果」。<br>不带引号数字会偏大，不能用。仅用于算 KGR。</span></button>
+              <button class="q" type="button" aria-label="intitle 取数说明">?<span class="bub"><b>取值方式：</b>在 Google 搜索 <code>intitle:"关键词"</code>（须带引号），点击搜索框下方「工具」，读取「找到约 X 条结果」。<br>未加引号时结果数会显著偏大，不可用于计算；该数值仅用于计算 KGR。</span></button>
             </label>
             <input type="number" id="intitle" min="1" step="1" placeholder="1400" inputmode="numeric">
             <div class="err" id="intitle-err"></div>
@@ -329,7 +329,7 @@
 
           <div class="field">
             <label class="fl" for="volume">月搜索量 <span class="opt">可选</span>
-              <button class="q" type="button" aria-label="月搜索量说明">?<span class="bub"><b>可留空：</b>没有 Ads 账号时，用 Trends 参照词估（候选曲线是参照词的几倍 × 参照日量 × 30）。<br>不填则跳过 KGR，其余判定照常。</span></button>
+              <button class="q" type="button" aria-label="月搜索量说明">?<span class="bub"><b>可留空：</b>若无可用的 Google Ads 账号，可用 Trends 参照词估算（候选词曲线相对参照词的倍数 × 参照词日搜索量 × 30）。<br>留空则跳过 KGR 计算，其余判定不受影响。</span></button>
             </label>
             <input type="number" id="volume" min="1" step="1" placeholder="20000" inputmode="numeric">
             <div class="err" id="volume-err"></div>
@@ -354,15 +354,15 @@
         <div class="toggles">
           <div class="tg">
             <label class="sw"><input type="checkbox" id="sBrand" checked><i></i></label>
-            <div class="tg-t"><b>品牌词一票否决</b><small>原文 g4 L223「官方网站会稳居第一，你拿不到第一」</small></div>
+            <div class="tg-t"><b>品牌词一票否决</b><small>依据：官方站点通常占据首位，新建站点难以取得第一名</small></div>
           </div>
           <div class="tg">
             <label class="sw"><input type="checkbox" id="sTrend"><i></i></label>
-            <div class="tg-t"><b>趋势下降 / 尖刺 视为硬指标</b><small>原文 g4 L167「不是完全不能做……关键是你要知道自己在做什么」</small></div>
+            <div class="tg-t"><b>趋势下降 / 尖刺 视为硬指标</b><small>依据：此类关键词并非不可做，关键在于是否了解其热度特征</small></div>
           </div>
           <div class="tg">
             <label class="sw"><input type="checkbox" id="sRisk" checked><i></i></label>
-            <div class="tg-t"><b>风险 ≥ <input type="number" id="tRisk" value="2" min="1" max="9"> 项判为「待定」</b><small>此机制为我设计，教程无对应规定</small></div>
+            <div class="tg-t"><b>风险 ≥ <input type="number" id="tRisk" value="2" min="1" max="9"> 项判为「待定」</b><small>此项为工具自定义规则，教程未作规定</small></div>
           </div>
         </div>
         <div style="display:flex;gap:9px;margin-top:14px;flex-wrap:wrap">
@@ -378,17 +378,17 @@
         <div class="card-h"><h2>结论</h2><span class="aside" id="verdictAside"></span></div>
         <div class="verdict empty" id="verdict">
           <div class="vtop"><span class="vbadge" id="vBadge">待输入</span><span class="vkw" id="vKw"></span></div>
-          <div class="vreason" id="vReason">填好必需项后点「判定」，或按 <kbd>⌘↵</kbd>。</div>
+          <div class="vreason" id="vReason">填写必填项后点击「判定」，或按 <kbd>⌘↵</kbd>。</div>
         </div>
         <div class="vhint" id="vHint" style="display:none"></div>
         <div class="chips" id="chips"></div>
         <table class="rows" id="rows"></table>
         <div class="mdbox" id="mdWrap" style="display:none">
-          <label class="fl" for="md">可直接粘贴进表 B 的一行</label>
+          <label class="fl" for="md">可粘贴至记录表的一行</label>
           <textarea id="md" readonly></textarea>
           <div class="md-actions">
             <button class="btn sm" id="btnCopy" type="button">复制这一行</button>
-            <span style="font-size:11.5px;color:var(--ink4)">含档位与规则签名，便于事后复查</span>
+            <span style="font-size:11.5px;color:var(--ink4)">包含档位与规则签名，便于日后复查</span>
           </div>
         </div>
       </div>
@@ -396,14 +396,15 @@
       <div class="card">
         <div class="card-h"><h2>本次记录</h2><span class="aside" id="histCount">0 条</span></div>
         <ul class="hist" id="hist"></ul>
-        <div class="empty-tip" id="histTip">判定过的词会出现在这里，点一下可回填数据。</div>
+        <div class="empty-tip" id="histTip">已判定的关键词将在此列出，点击可回填对应数据。</div>
       </div>
     </div>
   </div>
 
   <footer>
-    硬指标出处：<code>KD&lt;10</code>、<code>外链站&lt;10</code>（OpenGeFei · 分支 <code>claude/ecstatic-gauss-12hlsv</code> · commit <code>4b9243a</code> · g4 L200 / g3 L40）；<code>KGR&lt;0.25</code>（g4 L179，转述群友奥赛）；趋势三形态（g4 L161—166）；<code>KD&lt;29</code>（g4 L201「保小图大」）。<br>
-    中等档的外链阈值、宽松档的 <code>KD&lt;49</code> / <code>外链&lt;50</code>、「趋势硬指标」「风险计数」均为我的设定，非原文规定，可随时改。截图识别依赖 Tesseract.js（首次需联网），结果仅作辅助，务必核对。
+    判定标准参考 OpenGeFei 出海建站教程《第 2 步：找需求定关键词》与《第 1 步：定方向》，主要数值取自该教程及其引用的公开资料，完整出处见项目说明文档。<br>
+    中等档的外链阈值、宽松档的 KD 与外链阈值、「趋势下降视为硬指标」「风险计数」四项为工具自定义规则，教程未作规定，可在「门槛与附加规则」中调整。<br>
+    截图识别依赖 Tesseract.js（首次使用需联网加载），识别结果仅供参考，请以人工核对为准。
   </footer>
 </div>
 
@@ -429,17 +430,17 @@
   const PRESETS = {
     strict: {
       name:'严格', kd:10, ref:10, kgr:0.25, trendHard:true, brandVeto:true, riskGate:2,
-      desc:'<b>严格 —— 教程第一个练手站口径</b>：KD &lt; 10、所需外链站 &lt; 10、KGR &lt; 0.25、趋势下降或尖刺直接否决、品牌词一票否决、风险 ≥2 项判待定。<span class="src">这套数值全部有原文出处。</span>',
+      desc:'<b>严格 · 适用于第一个练手站</b>：KD &lt; 10、所需外链站 &lt; 10、KGR &lt; 0.25；趋势下降或尖刺直接否决；品牌词一票否决；风险 ≥2 项判为待定。<span class="src">本档全部数值均可追溯至教程文本。</span>',
       color:'#a9382d'
     },
     medium: {
       name:'中等', kd:29, ref:25, kgr:0.5, trendHard:false, brandVeto:true, riskGate:3,
-      desc:'<b>中等 —— 第二、三个站</b>：KD &lt; 29、所需外链站 &lt; 25、KGR &lt; 0.5、趋势只警告、品牌词仍否决、风险 ≥3 项判待定。<span class="src">KD&lt;29 出自原文「保小图大」</span>；<span class="mine">外链 25 与 KGR 0.5 是按同倍数推的，非原文。</span>',
+      desc:'<b>中等 · 适用于第二、三个站</b>：KD &lt; 29、所需外链站 &lt; 25、KGR &lt; 0.5；趋势仅提示；品牌词仍否决；风险 ≥3 项判为待定。<span class="src">KD &lt; 29 取自教程「保小图大」一节。</span><span class="mine">外链 25 与 KGR 0.5 为按同等倍数推定，教程未作规定。</span>',
       color:'#96690f'
     },
     loose: {
       name:'宽松', kd:49, ref:50, kgr:1, trendHard:false, brandVeto:false, riskGate:0,
-      desc:'<b>宽松 —— 追新词 / 热点</b>：KD &lt; 49、所需外链站 &lt; 50、KGR &lt; 1、趋势与品牌词只警告、风险不拦截。适合你清楚自己在赌什么的时候用。<span class="mine">KD 0—49 借用原文的筛词口径，其余为我的设定。</span>',
+      desc:'<b>宽松 · 适用于新词与热点追踪</b>：KD &lt; 49、所需外链站 &lt; 50、KGR &lt; 1；趋势与品牌词仅提示；风险不拦截。适用于对风险有明确认知并主动选择承担的情形。<span class="mine">KD 0—49 借用教程的筛词口径，其余为工具设定。</span>',
       color:'#1c5d86'
     }
   };
@@ -534,11 +535,11 @@
 
     // 风险项
     const risks = [];
-    if(d.brand && !rules.brandVeto)     risks.push('品牌词：官方站稳居第一');
-    if(trendBad && !rules.trendHard)    risks.push(TREND[d.trend] + '：窗口可能已关闭');
-    if(d.sitelinks)                     risks.push('前排有 Sitelinks：用户想找的是那个站');
-    if(d.serp === 'dedicated')          risks.push('前 10 全是专站首页');
-    if(d.trend === 'seasonal')          risks.push('季节词：只有几个月有量');
+    if(d.brand && !rules.brandVeto)     risks.push('品牌词：官方站点占据首位');
+    if(trendBad && !rules.trendHard)    risks.push(TREND[d.trend] + '：需求窗口可能已关闭');
+    if(d.sitelinks)                     risks.push('前列含 Sitelinks：用户意图指向特定站点');
+    if(d.serp === 'dedicated')          risks.push('前 10 名均为专注该词的独立站点');
+    if(d.trend === 'seasonal')          risks.push('季节词：仅个别月份有搜索量');
     if(kgrHigh)                         risks.push('KGR ' + kgr.toFixed(3) + ' 高于门槛 ' + rules.kgr);
     if(!d.domainOk)                     risks.push('.com 已被注册');
 
@@ -546,27 +547,27 @@
     let cls, label, reason;
     if(d.brand && rules.brandVeto){
       cls='reject'; label='淘汰';
-      reason='品牌词 —— 一票否决。用户搜的是某个具体产品，官方站永远第一。';
+      reason='品牌词：一票否决。用户搜索的是特定产品，官方站点通常占据首位。';
     } else if(hardFails.length){
       cls='reject'; label='淘汰';
-      reason = hardFails.map(h => h.label + ' ' + h.txt).join('；') + '。硬指标不过，做进去也拿不到位置。';
+      reason = hardFails.map(h => h.label + ' ' + h.txt).join('；') + '。硬指标未达标，即使上线也难以获得排名。';
     } else if(rules.riskGate > 0 && risks.length >= rules.riskGate){
       cls='review'; label='待定';
-      reason = '硬指标全过，但 ' + risks.length + ' 项风险（≥' + rules.riskGate + ' 判待定）：' + risks.join('；') + '。';
+      reason = '硬指标全部达标，但存在 ' + risks.length + ' 项风险（≥' + rules.riskGate + ' 项判为待定）：' + risks.join('；') + '。';
     } else if(risks.length){
       cls='pass'; label='通过（带 ' + risks.length + ' 项风险）';
-      reason = '硬指标全过。风险：' + risks.join('；') + '。';
+      reason = '硬指标全部达标。风险项：' + risks.join('；') + '。';
     } else {
       cls='pass'; label='通过';
-      reason = '硬指标全过，未发现风险项。这种词不多，看到别犹豫。';
+      reason = '硬指标全部达标，未发现风险项。此类关键词较为稀缺，建议优先推进。';
     }
 
     // 数据自洽提示（不参与判定）
     const notes = [];
-    if(kgr !== null && kgr > 5) notes.push('KGR 异常高（' + kgr.toFixed(1) + '），检查 intitle 与月搜索量是否填反了。');
-    if(d.kd <= 5 && d.serp === 'dedicated') notes.push('KD 很低但前排全是专站，两项数据可能有一项填错。');
-    if(d.ref === 0 && d.kd > 20) notes.push('所需外链站为 0 但 KD 偏高，两者通常不会同时出现。');
-    if(d.volume !== null && d.intitle !== null && d.volume > 0 && d.intitle > d.volume * 50) notes.push('intitle 结果数远大于月搜索量，确认引号是否漏了。');
+    if(kgr !== null && kgr > 5) notes.push('KGR 异常偏高（' + kgr.toFixed(1) + '），请检查 intitle 结果数与月搜索量是否填反。');
+    if(d.kd <= 5 && d.serp === 'dedicated') notes.push('KD 很低但前 10 名均为独立站点，两项数据可能存在填写错误。');
+    if(d.ref === 0 && d.kd > 20) notes.push('所需外链站为 0 但 KD 偏高，两者通常不会同时出现，请核对。');
+    if(d.volume !== null && d.intitle !== null && d.volume > 0 && d.intitle > d.volume * 50) notes.push('intitle 结果数远大于月搜索量，请确认搜索时是否遗漏引号。');
 
     return {hard, risks, kgr, kgrHigh, cls, label, reason, notes, hardFails};
   }
@@ -640,7 +641,7 @@
       $('vHint').style.display = 'none';
       $('chips').innerHTML = ''; $('rows').innerHTML = ''; $('mdWrap').style.display = 'none';
       $('verdictAside').textContent = '';
-      toast('先修正标红的字段');
+      toast('请先修正标记为错误的字段');
       return;
     }
     const d = readData();
@@ -661,12 +662,12 @@
       const rr = evaluate(d, {kd:p.kd, ref:p.ref, kgr:p.kgr, trendHard:p.trendHard, brandVeto:p.brandVeto, riskGate:p.riskGate});
       if(r.cls === 'reject' && rr.cls !== 'reject'){
         hint = '同一份数据在 <b>' + p.name + ' 档</b>下为「' + (rr.cls === 'pass' ? '通过' : '待定') +
-          '」。差距是 ' + gapText(r, p) + '——要不要放宽，取决于你能搞到多少外链。';
+          '」。与当前档位的关键差距为：' + gapText(r, p) + '。是否采用更宽松的标准，取决于可获取的外链资源。';
         break;
       }
     }
     if(!hint && r.notes.length) hint = r.notes.join('<br>');
-    if(!hint && r.cls === 'review') hint = '待定不是结论，是提醒：把风险逐条想清楚再决定，别靠感觉。';
+    if(!hint && r.cls === 'review') hint = '「待定」表示规则未给出明确结论，请逐条评估所列风险后再作决定。';
     $('vHint').style.display = hint ? 'block' : 'none';
     $('vHint').innerHTML = hint;
 
@@ -730,7 +731,7 @@
     syncLevelUI();
     judged = true;
     judge(true);
-    toast('已回填：' + h.kw);
+    toast('已回填该条记录');
   });
 
   $('btnExport').addEventListener('click', () => {
@@ -763,7 +764,7 @@
     document.querySelectorAll('#seg button').forEach(b => b.classList.toggle('on', b.dataset.lv === level));
     const box = $('lvlDesc');
     if(level === 'custom'){
-      box.innerHTML = '<b>自定义</b>：你手动改过门槛或开关，当前组合不对应任何预设档。点上方任一档位会覆盖这些值。';
+      box.innerHTML = '<b>自定义</b>：已手动修改门槛或开关，当前组合不对应任何预设档。点击上方任一档位将覆盖这些设置。';
       $('actLv').textContent = '当前：自定义';
     } else {
       box.innerHTML = PRESETS[level].desc;
@@ -772,7 +773,7 @@
   }
   function markCustom(){ if(level !== 'custom'){ level = 'custom'; syncLevelUI(); } }
   document.querySelectorAll('#seg button').forEach(b => {
-    b.addEventListener('click', () => { applyLevel(b.dataset.lv); toast('已切换到「' + PRESETS[b.dataset.lv].name + '」档'); });
+    b.addEventListener('click', () => { applyLevel(b.dataset.lv); toast('已切换至「' + PRESETS[b.dataset.lv].name + '」档'); });
   });
 
   /* ============ 事件 ============ */
@@ -817,13 +818,13 @@
     clearErrs();
     $('verdict').className = 'verdict empty';
     $('verdict').innerHTML = '<div class="vtop"><span class="vbadge" id="vBadge">待输入</span></div>' +
-      '<div class="vreason" id="vReason">填好必需项后点「判定」，或按 <kbd>⌘↵</kbd>。</div>';
+      '<div class="vreason" id="vReason">填写必填项后点击「判定」，或按 <kbd>⌘↵</kbd>。</div>';
     $('vHint').style.display = 'none'; $('chips').innerHTML = ''; $('rows').innerHTML = '';
     $('mdWrap').style.display = 'none'; $('verdictAside').textContent = '';
     $('ocrStatus').textContent = ''; $('ocrStatus').className = '';
     const img = $('drop').querySelector('img'); if(img){ URL.revokeObjectURL(img.src); img.remove(); }
     judged = false; localStorage.removeItem(DRAFT_KEY);
-    toast('已清空输入（记录保留）');
+    toast('输入已清空，历史记录保留');
   });
 
   /* 示例 */
@@ -834,7 +835,7 @@
     F.trend.value = 'declining'; F.serp.value = 'dedicated';
     F.brand.checked = false; F.sitelinks.checked = true; F.domain.checked = true;
     judged = true; clearErrs(); judge(true);
-    toast('已载入真实案例：三档都过不了');
+    toast('已载入示例数据');
   });
 
   /* 复制 */
@@ -842,7 +843,7 @@
     const text = $('md').value;
     try{ await navigator.clipboard.writeText(text); }
     catch(_){ $('md').select(); document.execCommand('copy'); }
-    toast('已复制，可直接粘进表格');
+    toast('已复制，可直接粘贴至记录表');
   });
 
   /* ============ 草稿保存 ============ */
@@ -920,7 +921,7 @@
 
   async function handleFile(file){
     if(!file || !/^image\//.test(file.type)){ setStatus('请选择图片文件。','err'); return; }
-    if(ocrBusy){ setStatus('正在识别上一张，稍等…'); return; }
+    if(ocrBusy){ setStatus('正在识别上一张图片，请稍候。'); return; }
     ocrBusy = true;
     const url = URL.createObjectURL(file);
     const prev = drop.querySelector('img'); if(prev){ URL.revokeObjectURL(prev.src); prev.remove(); }
@@ -938,13 +939,13 @@
       if(r.trend !== undefined){ F.trend.value = r.trend; F.trend.classList.add('auto'); filled.push('趋势 ' + TREND[r.trend]); }
 
       if(filled.length){
-        setStatus('识别到 ' + filled.length + ' 项：' + filled.join('、') + '（黄底字段请核对，改一下黄底就消失）', 'ok');
+        setStatus('已识别 ' + filled.length + ' 项：' + filled.join('、') + '。黄色标注的字段请人工核对，修改后标记自动清除。', 'ok');
         judged = true; clearErrs(); judge(true);
       } else {
-        setStatus('没识别出可用数字。截图请对准数字区域，或直接手动填。', 'err');
+        setStatus('未识别到可用数值，请对准数字区域重新截图，或手动填写。', 'err');
       }
     }catch(_){
-      setStatus('识别引擎不可用（可能被网络拦截）。手动填写即可，不影响判定。', 'err');
+      setStatus('识别引擎不可用（可能受网络限制），请手动填写，不影响判定。', 'err');
     }finally{ ocrBusy = false; }
   }
 
@@ -979,8 +980,8 @@
   syncLevelUI();
   if(restored){
     const v = validate(true);
-    if(v.ok){ judged = true; judge(false); toast('已恢复上次的输入并重算'); }
-    else { judged = false; toast('已恢复上次的输入'); }
+    if(v.ok){ judged = true; judge(false); toast('已恢复上次输入并重新判定'); }
+    else { judged = false; toast('已恢复上次输入'); }
   }
   renderHistory();
 })();
