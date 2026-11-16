@@ -187,6 +187,22 @@
   }
   .tp-x:hover{color:var(--ink2)}
   .tpanel .drop{padding:12px}
+  .tpanel textarea{
+    width:100%;box-sizing:border-box;min-height:78px;padding:9px 10px;resize:vertical;
+    border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;line-height:1.65;
+  }
+  .tpanel textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(28,93,134,.1)}
+  .serp-bar{display:flex;align-items:center;gap:8px;margin-top:9px;flex-wrap:wrap}
+  .srow{display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--line2)}
+  .srow:last-child{border-bottom:0}
+  .srow .n{font-size:11px;color:var(--ink4);font-variant-numeric:tabular-nums}
+  .srow .h{font-size:12px;font-weight:600;color:var(--ink);word-break:break-all}
+  .srow .m{font-size:11px;color:var(--ink3);line-height:1.5;margin-top:2px}
+  .stag{font-size:10.5px;padding:1px 6px;border-radius:5px;border:1px solid var(--line);background:#f4f7fa;color:var(--ink2);white-space:nowrap}
+  .stag.ded{background:var(--rejectbg);color:var(--reject);border-color:var(--rejectbd)}
+  .stag.off{background:var(--reviewbg);color:var(--review);border-color:var(--reviewbd)}
+  .stag.ugc{background:var(--passbg);color:var(--pass);border-color:var(--passbd)}
 
   /* ---------- 趋势图识别 ---------- */
   .tstatus{margin-top:9px;font-size:12px;color:var(--ink3);line-height:1.55;min-height:16px}
@@ -394,6 +410,7 @@
             <label class="fl" for="serp">前 10 名构成 <span class="req">*</span>
               <button class="q" type="button" aria-label="搜索结果判断说明">?<span class="bub"><b>判断方式：</b>在 Google 搜索该关键词，观察前 10 名是「专注该词的独立站点首页」还是「大型站点的一个内页」。<br>以内页为主，说明尚无专门站点，属于可用空间。</span></button>
               <button class="lk" type="button" data-tool="google">看搜索结果<svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 8L8 2M8 2H3.4M8 2v4.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+              <button class="lk" type="button" data-act="serp">抓取分析</button>
             </label>
             <select id="serp">
               <option value="">请选择…</option>
@@ -402,6 +419,23 @@
               <option value="inner">大站内页为主</option>
             </select>
             <div class="err" id="serp-err"></div>
+          </div>
+
+          <div class="span2 tpanel" id="serpPanel">
+            <div class="tp-head">
+              <span class="tp-title">SERP 抓取分析</span>
+              <button class="tp-x" type="button" id="btnSerpClose" aria-label="收起">×</button>
+            </div>
+            <textarea id="serpUrls" spellcheck="false" placeholder="每行一个 URL，例如：
+https://presetseditor.com/
+https://capcut.com/create/tiktok-video-editor
+reddit.com/r/capcut"></textarea>
+            <div class="serp-bar">
+              <button class="btn sm primary" type="button" id="btnSerpRun">开始分析</button>
+              <button class="btn sm" type="button" id="btnSerpFill">示例</button>
+              <span class="ocr-msg" id="serpStatus"></span>
+            </div>
+            <div id="serpResult" class="tresult"></div>
           </div>
 
           <div class="span2 tpanel" id="trendPanel">
@@ -1669,6 +1703,271 @@
     trendPanel.classList.remove('on');
     tResult.classList.remove('on'); tResult.innerHTML = ''; setT('');
     const im = tdrop.querySelector('img'); if(im){ URL.revokeObjectURL(im.src); im.remove(); }
+  });
+
+
+  /* ============ SERP 抓取分析（经 Worker 代理，规则与 serp-check.js 一致） ============ */
+  const serpPanel = $('serpPanel'), serpUrlsEl = $('serpUrls'),
+        serpResult = $('serpResult'), serpStatus = $('serpStatus');
+
+  const UGC_LIST = ['reddit.com','quora.com','youtube.com','youtu.be','medium.com','pinterest.com','facebook.com',
+    'instagram.com','tiktok.com','x.com','twitter.com','linkedin.com','stackoverflow.com','stackexchange.com',
+    'wikipedia.org','fandom.com','tumblr.com','scribd.com','slideshare.net','vimeo.com','dailymotion.com'];
+  const BIG_LIST = ['amazon.com','etsy.com','ebay.com','walmart.com','shopify.com','adobe.com','canva.com',
+    'google.com','microsoft.com','apple.com','github.com','behance.net','dribbble.com','envato.com',
+    'freepik.com','shutterstock.com','istockphoto.com','alamy.com','capcut.cn'];
+  const STOP_W = new Set(('a an the and or of for to in on at by with from is are was were be been this that these those ' +
+    'you your it its as if but not no so than then there their they we our us can will just do does how what why ' +
+    'when which more most other some such only own same too very s t don now').split(' '));
+  const GENERIC_W = new Set(['free','online','best','top','app','apps','tool','tools','download','website','site']);
+
+  function kwTokenize(str){
+    return [...new Set(String(str).toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g,' ')
+      .split(' ').filter(w => w.length > 1 && !STOP_W.has(w)))];
+  }
+
+  function analyzeHtml(html, finalUrl, kw, requestedUrl){
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    doc.querySelectorAll('script,style,link,meta[http-equiv]').forEach(e => e.remove());
+
+    const navLinks = doc.querySelectorAll('nav a').length;
+    const allLinks = doc.querySelectorAll('a').length;
+    const inputs = doc.querySelectorAll('input').length;
+    const buttons = doc.querySelectorAll('button').length;
+    const forms = doc.querySelectorAll('form').length;
+
+    const title = (doc.querySelector('title') ? doc.querySelector('title').textContent : '').replace(/\s+/g,' ').trim();
+    const descEl = doc.querySelector('meta[name="description"]');
+    const desc = descEl ? (descEl.getAttribute('content') || '').replace(/\s+/g,' ').trim() : '';
+    const h1 = [...doc.querySelectorAll('h1')].map(e => e.textContent.replace(/\s+/g,' ').trim()).filter(Boolean);
+
+    doc.querySelectorAll('nav,footer,header').forEach(e => e.remove());
+    const body = (doc.body ? doc.body.textContent : '').replace(/\s+/g,' ').trim();
+
+    let u;
+    try { u = new URL(finalUrl); } catch(e){ u = new URL(requestedUrl); }
+    const root = u.hostname.replace(/^www\./,'');
+    const isRootPath = u.pathname === '/' || u.pathname === '' || u.pathname === '/index.html';
+
+    let reqHost = '';
+    try { reqHost = new URL(requestedUrl).hostname.replace(/^www\./,''); } catch(e){ reqHost = requestedUrl; }
+    const redirected = reqHost !== root;
+
+    const tokens = kwTokenize(kw);
+    const core = (tokens.filter(t => !GENERIC_W.has(t)).length ? tokens.filter(t => !GENERIC_W.has(t)) : tokens);
+
+    const titleL = title.toLowerCase(), h1L = h1.join(' ').toLowerCase(), bodyL = body.toLowerCase();
+    const titleHits = tokens.filter(t => titleL.includes(t));
+    const h1Hits = tokens.filter(t => h1L.includes(t));
+    const bodyHits = tokens.filter(t => bodyL.includes(t));
+    const kwWhole = String(kw).toLowerCase().trim();
+    const occurrences = kwWhole ? (bodyL.split(kwWhole).length - 1) : 0;
+    const bodyWords = body ? body.split(' ').length : 0;
+
+    const domNorm = root.replace(/[^a-z0-9]/g,'');
+    const domainHits = core.filter(t => t.length >= 3 && domNorm.includes(t));
+    const isUGC = UGC_LIST.some(d => root === d || root.endsWith('.' + d));
+    const isBig = BIG_LIST.some(d => root === d || root.endsWith('.' + d)) || isUGC;
+
+    let score = 0; const why = [];
+    if(isRootPath){ score += 2; why.push('落地页为根路径'); } else why.push('落地页为深层路径 ' + u.pathname);
+    if(domainHits.length){
+      score += 2; why.push('域名含核心词 ' + domainHits.join('/'));
+      if(domainHits.length >= 2){ score += 1; why.push('域名命中多个核心词'); }
+    } else why.push('域名不含核心词');
+    const titleRatio = tokens.length ? titleHits.length / tokens.length : 0;
+    if(titleRatio >= 0.6){ score += 2; why.push('标题命中 ' + titleHits.length + '/' + tokens.length); }
+    else if(titleRatio >= 0.4){ score += 1; why.push('标题部分命中 ' + titleHits.length + '/' + tokens.length); }
+    else why.push('标题几乎不含关键词');
+    if(h1Hits.length){ score += 1; why.push('H1 含关键词'); }
+    if(navLinks >= 25){ score -= 1; why.push('导航链接 ' + navLinks + ' 个'); }
+    if(isBig){ score -= 3; why.push(isUGC ? 'UGC 平台' : '知名大站或多产品站'); }
+
+    // 反爬拦截页：内容不是目标站点真正的页面，不能参与构成判断
+    const BLOCK_RE = /prove your humanity|just a moment|access denied|attention required|are you a robot|checking your browser|enable javascript and cookies|ddos protection|verify you are human/i;
+    const blocked = BLOCK_RE.test(title) || (bodyWords < 220 && /captcha|cloudflare|verify you are human|robot/i.test(bodyL));
+
+    let type;
+    if(blocked) type = '被拦截';
+    else if(isUGC) type = 'UGC 社区';
+    else if(isBig) type = '大站内页';
+    else if(domainHits.length && /download|\bapp\b|get started|install/i.test(titleL + ' ' + bodyL.slice(0,600))) type = '官方产品站';
+    else if(score >= 5) type = '专站首页';
+    else if(forms > 0 && inputs >= 2 && /tool|editor|generator|maker|converter/i.test(titleL)) type = '工具页（内页）';
+    else if(bodyWords > 1200 && /how to|guide|tutorial|tips|what is/i.test(titleL + ' ' + h1L)) type = '内容博客';
+    else if(isRootPath && navLinks >= 8) type = '多产品/门户';
+    else type = '其他';
+
+    return {
+      requestedHost: reqHost, finalHost: root, finalUrl, redirected, isRootPath, path: u.pathname,
+      title, desc, h1: h1.slice(0,2), type, score, why, blocked,
+      navLinks, allLinks, inputs, buttons, forms,
+      match: { titleHits, h1Hits, bodyHits, tokenTotal: tokens.length, occurrences, bodyWords },
+      excerpt: (desc || h1[0] || body.slice(0,160)).slice(0,180)
+    };
+  }
+
+  const SERP_TAG = { '专站首页':'ded', '官方产品站':'off', 'UGC 社区':'ugc' };
+
+  function renderSerp(rows, kw){
+    const ok = rows.filter(r => !r.failed && !r.blocked);
+    const blockedRows = rows.filter(r => r && r.blocked);
+    const siteMap = new Map();
+    ok.forEach(r => {
+      if(!siteMap.has(r.finalHost)) siteMap.set(r.finalHost, { host: r.finalHost, pages: [], redirectedFrom: new Set(), primary: r });
+      const st = siteMap.get(r.finalHost);
+      st.pages.push(r);
+      if(r.redirected) st.redirectedFrom.add(r.requestedHost);
+    });
+    const sites = [...siteMap.values()];
+    const cnt = t => sites.filter(s => s.primary.type === t).length;
+    const dedicated = cnt('专站首页'), official = cnt('官方产品站'), ugc = cnt('UGC 社区');
+    const blockers = dedicated + official;
+
+    let vKey, vLabel, vCls;
+    if(dedicated >= 5){ vKey='dedicated'; vLabel='专站首页为主'; vCls='bad'; }
+    else if(dedicated >= 1 || blockers >= 2){ vKey='mixed'; vLabel='混合（专站 + 大站内页）'; vCls='warn'; }
+    else { vKey='inner'; vLabel='大站内页为主'; vCls=''; }
+
+    let html = '<div class="thead"><span class="tbadge ' + vCls + '">' + vLabel + '</span>'
+      + '<span class="tconf">' + rows.length + ' 个 URL · ' + sites.length + ' 个站点</span></div>';
+
+    html += '<div class="tchips">'
+      + '<span class="tchip">专站 ' + dedicated + '</span>'
+      + '<span class="tchip">官方/品牌 ' + official + '</span>'
+      + '<span class="tchip">UGC ' + ugc + '</span>'
+      + '<span class="tchip">其他 ' + (sites.length - dedicated - official - ugc) + '</span>'
+      + (blockedRows.length ? '<span class="tchip">被拦截 ' + blockedRows.length + '</span>' : '')
+      + '</div>';
+
+    html += '<div style="margin:10px 0 4px">';
+    rows.forEach((r, i) => {
+      if(r.failed){
+        html += '<div class="srow"><span class="n">' + (i+1) + '</span>'
+          + '<div><div class="h">' + escapeHtml(r.requestedHost || r.url) + '</div>'
+          + '<div class="m">' + escapeHtml(r.reason) + '</div></div>'
+          + '<span class="stag">失败</span></div>';
+        return;
+      }
+      const tagCls = SERP_TAG[r.type] || '';
+      const redir = r.redirected ? ' · 跳转自 ' + escapeHtml(r.requestedHost) : '';
+      if(r.blocked){
+        html += '<div class="srow"><span class="n">' + (i+1) + '</span>'
+          + '<div><div class="h">' + escapeHtml(r.finalHost) + '</div>'
+          + '<div class="m">返回的是反爬验证页（' + escapeHtml(r.title.slice(0,50)) +
+          '），不是真实页面内容，已排除出构成统计</div></div>'
+          + '<span class="stag">被拦截</span></div>';
+        return;
+      }
+      html += '<div class="srow"><span class="n">' + (i+1) + '</span>'
+        + '<div><div class="h">' + escapeHtml(r.finalHost) + escapeHtml(r.isRootPath ? '/' : r.path.slice(0,32)) + '</div>'
+        + '<div class="m">标题命中 ' + r.match.titleHits.length + '/' + r.match.tokenTotal
+        + ' · 专站分 ' + r.score + redir
+        + (r.title ? '<br>' + escapeHtml(r.title.slice(0,80)) : '') + '</div></div>'
+        + '<span class="stag ' + tagCls + '">' + r.type + '</span></div>';
+    });
+    html += '</div>';
+
+    html += '<ul class="tevidence">';
+    sites.forEach(st => {
+      html += '<li><b>' + escapeHtml(st.host) + '</b>：' + st.primary.type
+        + '（' + st.pages.length + ' 页）— ' + escapeHtml(st.primary.why.join('；')) + '</li>';
+    });
+    html += '</ul>';
+
+    if(blockedRows.length){
+      html += '<div class="tunc"><b>被拦截 ' + blockedRows.length + ' 条：</b>目标站返回了反爬验证页，抓不到真实内容。'
+        + '这类结果的实际类型未知，建议在浏览器里点开确认，不要直接按「内页」计入。</div>';
+    }
+    if(blockers >= 2){
+      html += '<div class="tunc"><b>注意：</b>有 ' + blockers + ' 个站点属于专站或官方/品牌站，'
+        + '它们不会把位置让出来。官方站若排在前列，应先在「品牌词」勾选框里标注。</div>';
+    }
+
+    html += '<div class="tact"><button class="btn sm primary" type="button" id="btnSerpApply">'
+      + '填入构成：' + vLabel + '</button>'
+      + '<button class="btn sm" type="button" id="btnSerpClear">清除</button></div>';
+
+    serpResult.innerHTML = html;
+    serpResult.classList.add('on');
+
+    $('btnSerpApply').addEventListener('click', () => {
+      F.serp.value = vKey;
+      F.serp.dispatchEvent(new Event('change', { bubbles: true }));
+      toast('已填入前 10 名构成：' + vLabel);
+    });
+    $('btnSerpClear').addEventListener('click', () => {
+      serpResult.classList.remove('on'); serpResult.innerHTML = '';
+      serpUrlsEl.value = ''; setSerpStatus('');
+    });
+  }
+
+  function setSerpStatus(msg, kind){ serpStatus.textContent = msg || ''; serpStatus.className = 'ocr-msg' + (kind ? ' ' + kind : ''); }
+
+  async function fetchOne(url){
+    const r = await fetch('/api/fetch-page?url=' + encodeURIComponent(url), { signal: AbortSignal.timeout(25000) });
+    return await r.json();
+  }
+
+  async function runSerpAnalysis(){
+    const kw = F.kw.value.trim();
+    if(!kw){ toast('请先填写关键词'); F.kw.focus(); return; }
+    const raw = serpUrlsEl.value.split('\n').map(x => x.trim()).filter(x => x && !x.startsWith('#'));
+    if(!raw.length){ toast('请粘贴至少一个 URL'); serpUrlsEl.focus(); return; }
+    if(location.protocol === 'file:'){
+      setSerpStatus('该功能需通过线上地址访问，本地直接打开文件时无法调用抓取接口。', 'err');
+      return;
+    }
+
+    const urls = [...new Set(raw.map(u => /^https?:\/\//i.test(u) ? u : 'https://' + u))];
+    const rows = new Array(urls.length);
+    setSerpStatus('正在抓取 0/' + urls.length + '…');
+    let done = 0;
+
+    const queue = urls.map((u, i) => ({ u, i }));
+    async function worker(){
+      while(queue.length){
+        const { u, i } = queue.shift();
+        let host = u;
+        try { host = new URL(u).hostname.replace(/^www\./,''); } catch(e){}
+        try {
+          const d = await fetchOne(u);
+          if(!d.ok){ rows[i] = { failed: true, url: u, requestedHost: host, reason: d.error || ('HTTP ' + d.status) }; }
+          else { rows[i] = analyzeHtml(d.html, d.finalUrl || u, kw, u); }
+        } catch(e){
+          rows[i] = { failed: true, url: u, requestedHost: host, reason: String(e.message || e) };
+        }
+        done++;
+        setSerpStatus('正在抓取 ' + done + '/' + urls.length + '…');
+      }
+    }
+    await Promise.all([worker(), worker(), worker(), worker()]);
+
+    const fail = rows.filter(r => r && r.failed).length;
+    renderSerp(rows, kw);
+    setSerpStatus('完成：' + (urls.length - fail) + ' 成功' + (fail ? '，' + fail + ' 失败' : ''), fail ? 'err' : 'ok');
+  }
+
+  // 入口按钮
+  document.querySelectorAll('[data-act="serp"]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.preventDefault(); e.stopPropagation();
+      serpPanel.classList.add('on');
+      if(!serpUrlsEl.value.trim()){
+        serpUrlsEl.value = 'https://presetseditor.com/\nhttps://capcut.com/\nhttps://www.reddit.com/r/capcut/';
+      }
+      serpUrlsEl.focus();
+      serpUrlsEl.scrollIntoView({ block:'nearest', behavior:'smooth' });
+    });
+    btn.addEventListener('mousedown', e => e.preventDefault());
+  });
+  $('btnSerpRun').addEventListener('click', runSerpAnalysis);
+  $('btnSerpClose').addEventListener('click', () => {
+    serpPanel.classList.remove('on');
+    serpResult.classList.remove('on'); serpResult.innerHTML = ''; setSerpStatus('');
+  });
+  $('btnSerpFill').addEventListener('click', () => {
+    serpUrlsEl.value = 'https://presetseditor.com/\nhttps://capcut.com/\nhttps://www.reddit.com/r/capcut/';
   });
 
   /* ============ 初始化 ============ */

@@ -160,6 +160,42 @@
 - CSV：点击直接打开文件选择，识别完成后结果同样展现在该面板内，并显示「数据来源：CSV · 53 个数据点 · 跨度 12.0 个月」。
 - 全部识别结果都带「填入趋势形态」按钮，一键写回下拉框。
 
+### SERP 抓取分析（前 10 名构成）
+
+在「前 10 名构成」旁点 **抓取分析**，粘贴搜索结果 URL，页面会抓取各站首页并给出构成判定。
+
+**为什么需要你提供 URL**：本工具自己搜不了。实测过的通道：
+
+| 通道 | 结果 |
+| --- | --- |
+| Google 直连 | 返回 JS 壳页；无头浏览器触发验证码 |
+| Bing | HTTP 200，但返回与查询无关的缓存页 |
+| DuckDuckGo / Qwant / Ecosia | 422 反爬标记 / 403 |
+
+流程是：点「看搜索结果」自己看一遍 → 复制前 10 条 URL → 粘进面板 → 分析 → 点「填入构成」写回下拉框。
+
+**判定规则**（与 `~/.workbuddy/skills/serp-homepage-check/scripts/serp-check.js` 同一套）：
+
+专站分 = 根路径 +2、域名含核心词 +2（命中 ≥2 个再 +1）、标题命中 ≥60% +2（≥40% +1）、H1 含关键词 +1、导航 ≥25 个 −1、UGC 或知名大站 −3。
+
+类型按顺序判：被拦截 → UGC 社区 → 大站内页 → 官方产品站 → 专站首页（分 ≥5）→ 工具页内页 → 内容博客 → 多产品门户 → 其他。
+
+汇总按**最终域名去重**（同站多页只算一个站点）；占位者 = 专站 + 官方站，两者都不会把位置让出来。
+
+**抓取由 Worker 代理完成**（`src/worker.js` 的 `GET /api/fetch-page?url=`）：
+
+- 仅允许 `http` / `https`、80 与 443 端口
+- 拦截内网：`127.*`、`10.*`、`172.16—31.*`、`192.168.*`、`169.254.*`、`100.64—127.*`、`localhost`、`*.local`、`*.internal`、IPv6
+- 单次超时 15 秒，响应截断 700 KB，仅接受 HTML
+- `GET /api/health` 可查服务状态
+
+**两类不计入统计的结果**：
+
+| 情况 | 处理 |
+| --- | --- |
+| 抓取失败（DNS / 超时 / 4xx） | 列出具体原因，不入构成 |
+| 反爬验证页（Reddit 的 Prove your humanity、Cloudflare 的 Just a moment 等） | 识别为「被拦截」，不入构成，并提示人工确认 |
+
 ### CSV 导入（最准确的方式）
 
 Google Trends 页面右上角的下载按钮 → 导出 `multiTimeline.csv` → 在「趋势形态」旁点 **CSV** 导入。
@@ -255,25 +291,36 @@ Google Trends 的 Y 轴**恒为 0—100**，100 等于该次查询自身的最�
 ## 四、本地运行
 
 ```bash
-# 直接打开（无需服务）
+# 纯前端功能（判定、趋势识别、CSV 导入、截图取数）
 open public/index.html
 
-# 或用静态服务（便于测试粘贴/拖拽）
-python3 -m http.server 5173 --directory public
+# 需要「抓取分析」时，必须用 dev 服务器把代理一起跑起来
+npx wrangler dev --port 8788
 ```
+
+> 直接双击打开 HTML 时，抓取分析会提示「需通过线上地址访问」——因为 `file://` 协议下无法调用 `/api/fetch-page`。
 
 ## 五、部署
 
-已配置 Cloudflare Workers 静态资源（`wrangler.jsonc` 中 `assets.directory = ./public`）。
+部署形态是 **Worker + 静态资源**：`src/worker.js` 负责 `/api/*`，其余请求交给 `env.ASSETS`。
 
 ```bash
-npx wrangler login      # 首次
-npx wrangler deploy     # 输出 *.workers.dev 地址
+npx wrangler login --device   # 首次；OAuth 回调在本机常失败，用设备码更稳
+./node_modules/.bin/wrangler deploy
 ```
+
+| 配置项 | 值 |
+| --- | --- |
+| `main` | `src/worker.js` |
+| `assets.directory` | `./public` |
+| `assets.binding` | `ASSETS` |
+
+> 静态资源本身不需要 Worker，但 `/api/fetch-page` 依赖它，因此不能只传 `public` 目录。
 
 ## 六、已知限制
 
-- **判定逻辑不联网**，数据全靠人工输入。不要期待它替你去查——谷歌搜索、Ahrefs、Trends 都有反爬或无公开 API（详见项目讨论：全自动取数的真实成本是每月几十美元的 API 费用）。
+- **能抓首页，不能搜 SERP**。判定数据仍是人工输入；「抓取分析」只在你给出 URL 后抓取页面，不会替你搜索。Google / Bing / DDG 的反爬已实测，自动搜索没有免费可靠路径。
+- **代理对反爬站点无能为力**。Reddit、Cloudflare 保护的站点会返回验证页，这类结果会被标为「被拦截」并排除出统计，但它的真实类型需要你在浏览器里确认。
 - **OCR 准确率有限**。多栏紧凑截图、缩放过的图片、非英文界面容易出错，因此识别结果一律标黄待核对。追求高准确率请把截图直接交给具备视觉能力的模型。
 - **门槛是社群经验值，不是实验结论**。`10` 这个数字的含义是「新手基准」，不是物理常数，可随时按自己的外链能力调整。
 
