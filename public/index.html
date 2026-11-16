@@ -112,14 +112,26 @@
   }
   .na-note{display:none;font-size:11px;color:var(--ink3);margin-top:4px;line-height:1.5}
   .isNew .na-note{display:block}
-  .onlyNormal{display:inline-flex}
-  .isNew .onlyNormal{display:none}
-  .lnk-na{
-    margin-top:4px;padding:0;border:0;background:none;cursor:pointer;
-    font-size:11.5px;font-weight:600;color:var(--accent);text-decoration:underline;
-    text-underline-offset:2px;text-decoration-thickness:1px;
+  .sw-line{
+    display:inline-flex;align-items:center;gap:8px;margin-top:6px;cursor:pointer;
+    font-size:11.5px;font-weight:600;color:var(--ink2);user-select:none;
   }
-  .lnk-na:hover{color:#144a6b}
+  .sw-line input{position:absolute;opacity:0;width:1px;height:1px;margin:0}
+  .sw-line .track{
+    position:relative;flex:0 0 auto;width:30px;height:17px;border-radius:17px;
+    background:#d3dae3;transition:background .16s;
+  }
+  .sw-line .track::after{
+    content:"";position:absolute;top:2.5px;left:2.5px;width:12px;height:12px;
+    background:#fff;border-radius:50%;transition:transform .16s;box-shadow:0 1px 2px rgba(0,0,0,.2);
+  }
+  .sw-line input:checked + .track{background:var(--accent)}
+  .sw-line input:checked + .track::after{transform:translateX(13px)}
+  .sw-line input:focus-visible + .track{box-shadow:0 0 0 3px rgba(28,93,134,.18)}
+  .sw-line:hover .track{background:#c7d0db}
+  .sw-line input:checked:hover + .track{background:#174f72}
+  .sw-line .on-txt{color:var(--ink4);font-weight:400}
+  .sw-line input:checked ~ .on-txt{color:var(--accent);font-weight:600}
   .err.on{display:block}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:13px}
   @media (max-width:600px){ .grid2{grid-template-columns:1fr} }
@@ -304,7 +316,12 @@
               <button class="lk" type="button" data-tool="ahrefs">查 Ahrefs<svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 8L8 2M8 2H3.4M8 2v4.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
             </label>
             <input type="number" id="kd" min="0" max="100" step="1" placeholder="54" inputmode="numeric">
-            <button class="lnk-na onlyNormal" type="button" id="btnNewMode">Ahrefs 显示 No data？点此启用新词模式</button>
+            <label class="sw-line">
+              <input type="checkbox" id="sNewInline">
+              <span class="track"></span>
+              <span>新词模式（KD 无数据）</span>
+              <span class="on-txt" id="newStateTxt">关闭</span>
+            </label>
             <div class="na-note">新词模式下不参与判定（Ahrefs 无数据时属正常）</div>
             <div class="err" id="kd-err"></div>
           </div>
@@ -457,7 +474,7 @@
     trend:$('trend'), serp:$('serp'), brand:$('brand'), sitelinks:$('sitelinks'), domain:$('domain'),
     tKd:$('tKd'), tRef:$('tRef'), tKgr:$('tKgr'),
     sBrand:$('sBrand'), sTrend:$('sTrend'), sRisk:$('sRisk'), tRisk:$('tRisk'),
-    sNew:$('sNew'), tAI:$('tAI')
+    sNew:$('sNew'), tAI:$('tAI'), sNewInline:$('sNewInline')
   };
   const NUM_FIELDS = ['intitle','volume','kd','ref','tKd','tRef','tKgr','tRisk'];
   const DRAFT_KEY = 'kj.draft.v1';
@@ -578,14 +595,29 @@
     toast(tool === 'trends' ? '已在 Google Trends 打开该关键词' : '已在 Google 打开查询结果');
   }
 
+  // 统一入口：两个开关互为镜像，避免状态不同步
+  function setNewMode(on){
+    F.sNew.checked = on;
+    if(F.sNewInline) F.sNewInline.checked = on;
+    syncNewMode();
+    scheduleDraft();
+    if(judged) judge(false);
+  }
+
   // 新词模式：切换界面状态（不影响已填数据，切回即恢复）
   function syncNewMode(){
     const on = F.sNew.checked;
+    if(F.sNewInline) F.sNewInline.checked = on;
+    const stateTxt = $('newStateTxt');
+    if(stateTxt) stateTxt.textContent = on ? '开启' : '关闭';
     document.body.classList.toggle('isNew', on);
     [F.kd, F.ref].forEach(el => {
       el.disabled = on;
       el.classList.toggle('na', on);
-      if(on){ el.dataset.keep = el.value; el.value = ''; el.placeholder = 'N/A'; }
+      if(on){
+        if(el.value !== '') el.dataset.keep = el.value;   // 只在有值时暂存，避免二次切换把暂存清空
+        el.value = ''; el.placeholder = 'N/A';
+      }
       else {
         if(el.dataset.keep && !el.value) el.value = el.dataset.keep;
         el.placeholder = el.id === 'kd' ? '54' : '99';
@@ -996,10 +1028,20 @@
   function autoJudge(){ if(judged) judge(false); }
 
   F.sNew.addEventListener('change', () => {
-    syncNewMode();
-    scheduleDraft();
-    if(judged) judge(false);
+    setNewMode(F.sNew.checked);
     toast(F.sNew.checked ? '已切换为新词模式：KD 与外链数不参与判定' : '已切回常规模式：KD 与外链数恢复参与判定');
+  });
+
+  // KD 字段旁的常显开关：与上方开关互为镜像
+  F.sNewInline.addEventListener('change', () => {
+    const on = F.sNewInline.checked;
+    setNewMode(on);
+    toast(on ? '已开启新词模式：KD 与外链数不参与判定' : '已关闭新词模式：KD 与外链数恢复参与判定');
+    if(on){
+      const it = F.intitle;
+      it.focus({preventScroll:true});
+      it.scrollIntoView({block:'center', behavior:'smooth'});
+    }
   });
 
   ['tKd','tRef','tKgr','tAI','sBrand','sTrend','sRisk','tRisk'].forEach(id => {
@@ -1015,16 +1057,6 @@
     });
     // 阻止 label 把点击转成输入框聚焦
     btn.addEventListener('mousedown', e => e.preventDefault());
-  });
-
-  $('btnNewMode').addEventListener('click', () => {
-    F.sNew.checked = true;
-    syncNewMode();
-    scheduleDraft();
-    toast('已启用新词模式：KD 与外链数不参与判定');
-    const it = F.intitle;
-    it.focus();
-    it.scrollIntoView({block:'center', behavior:'smooth'});
   });
 
   $('btnJudge').addEventListener('click', () => { judged = true; judge(true); });
