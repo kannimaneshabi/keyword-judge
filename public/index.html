@@ -1354,42 +1354,62 @@
     }
     const coverage=xs.length/n;
     const h=(maxY-minY)||1;
-    const vals=series.map(y=>(maxY-y)/h);   // 0..1，相对曲线自身高度
+    // 相对高度映射到 0—100（Google Trends 的 Y 轴恒为 0—100，但图像里读不到刻度）
+    const vals=series.map(y=>(maxY-y)/h*100);
     return {ok:true, vals, coverage, box:[minX,minY,maxX,maxY], W, H, plotW:maxX-minX};
   }
 
+  // 输入 v ∈ 0..100（真值）或 0..100（相对高度，见 mode）
+  // 判定以 X 轴（时长/周期/间隔）为主；幅值规则仅在真值模式下启用
   function trendFeatures(r, months){
     const v=r.vals, N=v.length;
+    const step = months/N;                       // 每个采样点代表的月数
     const mean=v.reduce((a,b)=>a+b,0)/N;
     const sd=Math.sqrt(v.reduce((a,b)=>a+(b-mean)**2,0)/N);
 
-    // 线性回归
     let sx=0,sy=0,sxx=0,sxy=0;
     v.forEach((y,i)=>{const t=i/(N-1); sx+=t; sy+=y; sxx+=t*t; sxy+=t*y;});
-    const slope=(N*sxy-sx*sy)/(N*sxx-sx*sx||1);
+    const slope=(N*sxy-sx*sy)/(N*sxx-sx*sx||1);   // 单位：全程变化量（点）
     const icpt=(sy-slope*sx)/N;
     let ssr=0,sst=0;
     v.forEach((y,i)=>{const t=i/(N-1);const p=icpt+slope*t; ssr+=(y-p)**2; sst+=(y-mean)**2;});
     const r2=sst>0?Math.max(0,1-ssr/sst):0;
 
-    // 平滑后找峰
-    const win=Math.max(3,Math.round(N/90));
-    const sm=v.map((_,i)=>{let a=0,c=0;for(let k=-win;k<=win;k++){const j=i+k;if(j>=0&&j<N){a+=v[j];c++;}}return a/c;});
+    // 平滑（窗口约全程 1/90，最少 1 个点）
+    const win=Math.max(1,Math.round(N/90));
+    const sm=v.map((_,i)=>{
+      let a=0,c=0;
+      for(let k=-win;k<=win;k++){ const j=i+k; if(j>=0&&j<N){ a+=v[j]; c++; } }
+      return a/c;
+    });
     const peak=Math.max(...sm), peakIdx=sm.indexOf(peak);
-    const peakWidth=sm.filter(x=>x>=peak*0.9).length/N;
+    const widthIdx=sm.filter(x=>x>=peak*0.9).length;
+    const peakWidth=widthIdx/N;
+    const peakDuration=widthIdx*step;            // 峰持续多少"个月"
     const sorted=[...v].sort((a,b)=>a-b);
     const p50=sorted[Math.floor(N*0.5)]||1e-6;
     const peakOverBase=peak/p50;
 
-    // 多峰计数
-    let peakCount=0, lastPeak=-1e9;
-    const thr=mean+0.5*sd;
+    // 峰列表（含间隔，用于季节/多峰判断）
+    const peaks=[];
+    const thr=mean+0.4*sd;
     for(let i=1;i<N-1;i++){
-      if(sm[i]>thr && sm[i]>=sm[i-1] && sm[i]>sm[i+1] && (i-lastPeak)>N*0.08){ peakCount++; lastPeak=i; }
+      if(sm[i]>thr && sm[i]>=sm[i-1] && sm[i]>sm[i+1]){
+        if(peaks.length && i-peaks[peaks.length-1].idx < N*0.06) continue;
+        peaks.push({idx:i, val:sm[i]});
+      }
+    }
+    const peakCount=peaks.length;
+    let peakGap=null;
+    if(peakCount>=2){
+      const gaps=[];
+      for(let i=1;i<peaks.length;i++) gaps.push((peaks[i].idx-peaks[i-1].idx)*step);
+      gaps.sort((a,b)=>a-b);
+      peakGap=gaps[Math.floor(gaps.length/2)];
     }
 
-    // 12 个月自相关（用于季节性）
-    const lag=Math.max(1,Math.round(N/(months/12)));
+    // 12 个月自相关（季节性）
+    const lag=Math.max(1,Math.round(12/step));
     let num=0,den=0;
     for(let i=0;i<N-lag;i++) num+=(v[i]-mean)*(v[i+lag]-mean);
     for(let i=0;i<N;i++) den+=(v[i]-mean)**2;
@@ -1400,36 +1420,51 @@
     const mid=avg(v.slice(Math.floor(N*0.35),Math.floor(N*0.65)));
     const tailVsMid=mid>1e-6?tail/mid:1;
 
-    return {N, mean, sd, cv:sd/(mean||1e-6), slope, r2, peak, peakWidth, peakPos:peakIdx/(N-1),
-      peakOverBase, peakCount, ac, tailVsMid, coverage:r.coverage};
+    return {N, step, mean, sd, cv:sd/(mean||1e-6), slope, r2,
+      peak, peakIdx, peakWidth, peakDuration, peakPos:peakIdx/(N-1),
+      peakOverBase, peakCount, peaks, peakGap, ac, tailVsMid, coverage:r.coverage};
   }
 
-  function classifyTrend(f, months){
+  // mode='true' 表示数值为真实 0—100 指数（CSV）；'relative' 表示由像素反推的相对高度
+  function classifyTrend(f, months, mode){
     const c=[];
     const add=(key,score,why)=>c.push({key,score:+score.toFixed(2),why});
-    const pct=x=>(x*100).toFixed(1);
+    const isTrue = mode === 'true';
 
-    if(f.peakWidth<0.05 && f.peakOverBase>3)
-      add('spike',0.92,`峰值宽度仅 ${pct(f.peakWidth)}%（<5%），峰值为基线的 ${f.peakOverBase.toFixed(1)} 倍`);
-    else if(f.peakWidth<0.09 && f.peakOverBase>2.5)
-      add('spike',0.7,`峰值宽度 ${pct(f.peakWidth)}%、峰值/基线 ${f.peakOverBase.toFixed(1)} 倍，具备尖刺特征但未达典型阈值`);
+    // —— X 轴为主的规则（与幅值无关，两种模式都适用）——
+    if(f.peakDuration <= Math.max(0.6, months*0.03) && f.peakOverBase >= 2.5)
+      add('spike',0.9,`峰只持续约 ${f.peakDuration.toFixed(1)} 个月（全程 ${months.toFixed(1)} 个月），峰值为中位数的 ${f.peakOverBase.toFixed(1)} 倍`);
 
-    if(f.peakPos>=0.3 && f.peakPos<=0.7 && Math.abs(f.slope)<0.28 && f.tailVsMid<0.68 && f.peakWidth<0.25)
-      add('hump',0.86,`峰位于全程 ${pct(f.peakPos)}% 处，尾段为中段的 ${f.tailVsMid.toFixed(2)} 倍，无长期方向（斜率 ${f.slope.toFixed(2)}）`);
+    // 主峰主导：不再要求"只有 1 个峰"，因为末尾的小回升也会被算作峰
+    if(f.peakOverBase>=2 && f.peakPos>=0.25 && f.peakPos<=0.75 && f.tailVsMid<0.75 && f.peakDuration>months*0.05)
+      add('hump',0.85,`主峰出现在 ${(f.peakPos*100).toFixed(0)}% 处、持续约 ${f.peakDuration.toFixed(1)} 个月、是中位数的 ${f.peakOverBase.toFixed(1)} 倍，之后回落到中段的 ${f.tailVsMid.toFixed(2)} 倍`);
 
-    if(Math.abs(f.slope)<0.2 && f.cv<0.45 && f.peakWidth>0.15)
-      add('box',0.8,`斜率 ${f.slope.toFixed(2)}、波动系数 ${f.cv.toFixed(2)}，长期在区间内震荡`);
+    if(f.peakCount>=2 && f.peakGap!==null && f.peakGap>=9 && f.peakGap<=15)
+      add('seasonal',0.8,`相邻峰间隔约 ${f.peakGap.toFixed(1)} 个月，符合年度周期`);
+    else if(months>=24 && f.ac>0.35)
+      add('seasonal',0.7,`12 个月滞后自相关 ${f.ac.toFixed(2)}，存在年度周期`);
 
-    if(f.slope>0.45 && f.r2>0.55) add('rising',0.85,`斜率 +${f.slope.toFixed(2)}、R²=${f.r2.toFixed(2)}，趋势线拟合良好`);
-    else if(f.slope>0.25 && f.tailVsMid>1.6) add('rising',0.62,`尾段为中段的 ${f.tailVsMid.toFixed(2)} 倍，整体斜率为正但拟合度低（R²=${f.r2.toFixed(2)}）`);
+    if(f.peakCount>=2 && (f.peakGap===null || (f.peakGap>1.5 && f.peakGap<9)))
+      add('multi',0.62,`检出 ${f.peakCount} 个峰${f.peakGap!==null?'，间隔约 '+f.peakGap.toFixed(1)+' 个月':''}，需求不稳定`);
 
-    if(f.slope<-0.45 && f.r2>0.5) add('declining',0.85,`斜率 ${f.slope.toFixed(2)}、R²=${f.r2.toFixed(2)}，呈持续下行`);
-    else if(f.slope<-0.25 && f.tailVsMid<0.6) add('declining',0.62,`尾段仅为中段的 ${f.tailVsMid.toFixed(2)} 倍，整体向下`);
-
-    if(f.slope>0.28 && f.r2<0.5 && f.tailVsMid>1.5) add('stair',0.6,`整体斜率为正但拟合度低（R²=${f.r2.toFixed(2)}），呈分段抬升`);
-    if(f.peakCount>=2) add('multi',0.6,`检测到 ${f.peakCount} 个显著峰，需求不稳定`);
-    if(months>=24 && f.ac>0.35) add('seasonal',0.72,`12 个月滞后自相关 ${f.ac.toFixed(2)}，存在年度周期`);
-    if(Math.abs(f.slope)<0.15 && f.cv<0.3) add('stable',0.7,`斜率 ${f.slope.toFixed(2)}、波动系数 ${f.cv.toFixed(2)}，全年稳定`);
+    // —— 幅值/斜率规则 ——
+    if(isTrue){
+      if(f.slope>45 && f.r2>0.55) add('rising',0.86,`全程上升 ${f.slope.toFixed(0)} 点，趋势线拟合 R²=${f.r2.toFixed(2)}`);
+      else if(f.slope>20 && f.tailVsMid>1.5) add('rising',0.64,`全程上升 ${f.slope.toFixed(0)} 点，末段为中段的 ${f.tailVsMid.toFixed(2)} 倍`);
+      if(f.slope<-45 && f.r2>0.5) add('declining',0.86,`全程下降 ${Math.abs(f.slope).toFixed(0)} 点，R²=${f.r2.toFixed(2)}`);
+      else if(f.slope<-20 && f.tailVsMid<0.6) add('declining',0.64,`全程下降 ${Math.abs(f.slope).toFixed(0)} 点，末段仅为中段的 ${f.tailVsMid.toFixed(2)} 倍`);
+      if(Math.abs(f.slope)<20 && f.cv<0.5 && f.peakOverBase<2.5)
+        add('box',0.78,`全程变化仅 ${Math.abs(f.slope).toFixed(0)} 点、波动系数 ${f.cv.toFixed(2)}，始终在同一区间内震荡`);
+      if(f.slope>20 && f.r2<0.5 && f.tailVsMid>1.5)
+        add('stair',0.6,`整体抬升 ${f.slope.toFixed(0)} 点但拟合度低（R²=${f.r2.toFixed(2)}），呈分段上升`);
+      if(Math.abs(f.slope)<10 && f.cv<0.35) add('stable',0.72,`全程变化仅 ${Math.abs(f.slope).toFixed(0)} 点、波动系数 ${f.cv.toFixed(2)}`);
+    } else {
+      // 相对高度：幅值被拉伸，只用方向与形状
+      if(f.slope>0.25 && f.r2>0.5) add('rising',0.72,`曲线整体上行（相对斜率 ${f.slope.toFixed(2)}，R²=${f.r2.toFixed(2)}）`);
+      if(f.slope<-0.25 && f.r2>0.5) add('declining',0.72,`曲线整体下行（相对斜率 ${f.slope.toFixed(2)}，R²=${f.r2.toFixed(2)}）`);
+      if(Math.abs(f.slope)<0.15 && f.peakOverBase<2.5) add('box',0.62,`无明显升降（相对斜率 ${f.slope.toFixed(2)}），峰值/中位数仅 ${f.peakOverBase.toFixed(2)} 倍`);
+      if(Math.abs(f.slope)<0.12 && f.cv<0.35) add('stable',0.6,`全程平稳（相对斜率 ${f.slope.toFixed(2)}）`);
+    }
 
     c.sort((a,b)=>b.score-a.score);
     if(!c.length) add('stable',0.4,'未命中任何强特征，暂按平稳处理');
@@ -1437,18 +1472,17 @@
     const best=c[0], second=c[1];
     const sep=second?Math.max(0,1-second.score/Math.max(best.score,1e-6)):1;
     let conf=best.score*(0.75+0.25*sep);
-    if(f.coverage<0.95) conf*=0.85;
-    if(f.coverage<0.8) conf*=0.8;
+    if(f.coverage<0.95) conf*=0.9;
+    if(!isTrue) conf*=0.92;          // 相对高度模式：幅值不可比，置信度略降
 
     const mods=[];
+    if(f.peakCount>=2) mods.push(f.peakCount+' 个峰');
+    if(f.peakDuration <= Math.max(0.6, months*0.03)) mods.push('峰极短');
     if(f.tailVsMid>1.8) mods.push('末段拉升');
     if(f.tailVsMid<0.55) mods.push('末段回落');
-    if(f.peakOverBase>3) mods.push('峰值突出');
-    if(f.r2<0.2) mods.push('无长期趋势');
-    if(f.cv>0.6) mods.push('波动较大');
-    if(f.peakCount>=2) mods.push(`${f.peakCount} 个峰`);
+    if(f.peak<=5) mods.push('整体热度极低');
 
-    return {best, second, conf:Math.min(0.97,conf), mods, all:c.slice(0,3)};
+    return {best, second, conf:Math.min(0.97,conf), mods, all:c.slice(0,3), mode};
   }
 
   function renderTrend(res, meta){
@@ -1472,13 +1506,27 @@
     const src = meta.source || '走势图';
     const pts = meta.points || res.f.N;
     const span = meta.months ? meta.months.toFixed(1) + ' 个月' : '—';
-    html+='<li><b>特征值：</b>斜率 '+res.f.slope.toFixed(3)+'、R² '+res.f.r2.toFixed(3)
-      +'、峰宽 '+(res.f.peakWidth*100).toFixed(1)+'%、峰值/基线 '+res.f.peakOverBase.toFixed(2)
-      +'、波动系数 '+res.f.cv.toFixed(2)+'</li>';
+    const isTrue = meta.scale === 'true';
+    const fnum = x => (isTrue ? Math.round(x) + '/100' : x.toFixed(0) + '（相对）');
+    html+='<li><b>X 轴（时间）：</b>峰持续约 '+res.f.peakDuration.toFixed(1)+' 个月'
+      + (res.f.peakGap ? '、相邻峰间隔约 '+res.f.peakGap.toFixed(1)+' 个月' : '、仅 1 个峰')
+      + '、峰位于 '+(res.f.peakPos*100).toFixed(0)+'% 处</li>';
+    html+='<li><b>Y 轴（幅度）：</b>峰值 '+fnum(res.f.peak)+'、中位数 '+fnum(res.f.peak <= 0 ? 0 : res.f.peak/res.f.peakOverBase)
+      +'、全程变化 '+ (isTrue ? res.f.slope.toFixed(0)+' 点' : res.f.slope.toFixed(2)+'（相对）')
+      +'、R² '+res.f.r2.toFixed(2)+'、波动系数 '+res.f.cv.toFixed(2)+'</li>';
     html+='<li><b>数据来源：</b>'+src+' · '+pts+' 个数据点 · 跨度 '+span
-      +(meta.source==='CSV' ? '' : ' · 覆盖率 '+(res.f.coverage*100).toFixed(1)+'%')+'</li>';
+      +(meta.source==='CSV' ? '' : ' · 覆盖率 '+(res.f.coverage*100).toFixed(1)+'%')
+      +' · Y 轴基准：'+(isTrue ? '真实 0—100 指数' : '相对高度（未读到刻度）')+'</li>';
     html+='</ul>';
 
+    if(!isTrue){
+      html+='<div class="tunc"><b>数值口径说明：</b>图片里读不到 Y 轴刻度，数值是按曲线自身极值换算的<b>相对高度</b>，'
+        + '不是绝对热度。因此本结果只判定<b>形状与时间结构</b>，幅值类规则（上升/下降的幅度、振幅）已降权。'
+        + '要得到可比数值，请改用 CSV 导出。</div>';
+    } else if(res.f.peak <= 5){
+      html+='<div class="tunc"><b>热度提醒：</b>全程峰值仅 '+Math.round(res.f.peak)
+        +'/100，属于极低热度。即便形态成立，实际搜索量可能不足，建议先用 KGR 或搜索量再确认需求规模。</div>';
+    }
     if(low){
       html+='<div class="tunc"><b>未明确归类的原因：</b>最佳与次选特征分差不足'
         +(res.second?('（'+t.score+' vs '+res.second.score+'）'):'')
@@ -1519,9 +1567,9 @@
         setT(ex.reason,'err'); return;
       }
       const f=trendFeatures(ex, months);
-      const res=classifyTrend(f, months);
+      const res=classifyTrend(f, months, 'relative');
       res.f=f;
-      renderTrend(res, {source:'走势图', points:f.N, months, imgW:im.naturalWidth});
+      renderTrend(res, {source:'走势图', points:f.N, months, imgW:im.naturalWidth, scale:'relative'});
       if(im.naturalWidth<800) setT('提示：图像宽度不足 800px，识别结果可靠性下降。','err');
       else if(ex.coverage<0.85) setT('提示：曲线覆盖率 '+(ex.coverage*100).toFixed(0)+'%，部分区段可能被遮挡或线条过细。','err');
       else setT('识别完成：'+TREND[res.best.key]+'（置信度 '+Math.round(res.conf*100)+'%）','ok');
@@ -1593,15 +1641,12 @@
       }
       const d0 = Date.parse(rows[0].d+'T00:00:00Z'), d1 = Date.parse(rows[rows.length-1].d+'T00:00:00Z');
       const months = (d1-d0)/86400000/30.44;
-      const raw = rows.map(r=>r.v);
-      const mn = Math.min(...raw), mx = Math.max(...raw);
-      const span = mx - mn;
-      // 与图像路径完全一致的归一化：(v-min)/(max-min)
-      const vals = span > 0 ? raw.map(v => (v-mn)/span) : raw.map(() => 0.5);
+      // 真值：Google Trends 的 Y 轴就是 0—100 的相对指数，直接使用，不做任何归一化
+      const vals = rows.map(r => Math.max(0, Math.min(100, r.v)));
       const f = trendFeatures({vals, coverage:1}, months);
-      const res = classifyTrend(f, months);
+      const res = classifyTrend(f, months, 'true');
       res.f = f;
-      renderTrend(res, {source:'CSV', points:rows.length, months, header});
+      renderTrend(res, {source:'CSV', points:rows.length, months, header, scale:'true'});
       setT('CSV 识别完成：'+TREND[res.best.key]+'（置信度 '+Math.round(res.conf*100)+'%）'
         + (header ? ' · ' + header : ''), 'ok');
     }catch(e){
