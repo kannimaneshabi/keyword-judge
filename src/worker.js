@@ -88,7 +88,7 @@ async function handleProxy(url) {
       truncated: bytes > MAX_BYTES,
       ms: Date.now() - started,
       html: new TextDecoder('utf-8').decode(cut)
-    }, res.ok ? 200 : 200);
+    }, res.ok ? 200 : 502);
   } catch (e) {
     let reason = String(e.message || e);
     if (e.name === 'AbortError' || /timeout|aborted/i.test(reason)) reason = '超时（' + TIMEOUT_MS + 'ms）';
@@ -108,7 +108,9 @@ export default {
       if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors() });
       if (request.method !== 'GET') return json({ ok: false, error: '仅支持 GET' }, 405);
 
-      // 按访问者 IP 限流，防止单点刷爆额度（本地 dev 无此 binding 时自动跳过）
+      // 按访问者 IP 限流。注意：本 binding 在实测中未触发（70 次连续请求仍全部放行），
+      // 因此不能作为唯一防护；生产环境应在 Cloudflare 控制台为 /api/fetch-page* 另配 Rate Limiting 规则。
+      // 本地 dev 无此 binding 时自动跳过。
       if (env.FETCH_LIMITER) {
         const ip = request.headers.get('CF-Connecting-IP') || 'anonymous';
         const { success } = await env.FETCH_LIMITER.limit({ key: ip });

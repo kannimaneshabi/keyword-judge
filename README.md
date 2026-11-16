@@ -187,7 +187,11 @@
 - 仅允许 `http` / `https`、80 与 443 端口
 - 拦截内网：`127.*`、`10.*`、`172.16—31.*`、`192.168.*`、`169.254.*`、`100.64—127.*`、`localhost`、`*.local`、`*.internal`、IPv6
 - 单次超时 15 秒，响应截断 700 KB，仅接受 HTML
-- **按访问者 IP 限流：60 次 / 60 秒**（Cloudflare Rate Limiting binding，`env.FETCH_LIMITER`），超限返回 429。一次分析 10 个 URL 消耗 10 次，正常使用不会触发
+- 已配置 Cloudflare Rate Limiting binding（`env.FETCH_LIMITER`，60 次 / 60 秒 / 每 IP），超限返回 429
+
+> **限流的实测状态**：该 binding 已落库并在部署清单中显示，但 2026-11-16 实测 70 次连续请求（同一出口 IP、串行）**未触发任何 429**。因此它目前不能算有效防护。
+>
+> 正式对外前，请在 Cloudflare 控制台为 `/api/fetch-page*` 单独添加 **Rate Limiting 规则**（免费计划可配 1 条，建议 60 次 / 1 分钟 / 每 IP，动作 Block）。控制台规则的执行位置在 Worker 之前，比 Worker 内的 binding 更可靠。
 - `GET /api/health` 可查服务状态
 
 **两类不计入统计的结果**：
