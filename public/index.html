@@ -172,6 +172,29 @@
   #ocrStatus{margin-top:8px;font-size:12px;color:var(--ink3);line-height:1.55;min-height:16px}
   #ocrStatus.ok{color:var(--pass)} #ocrStatus.err{color:var(--reject)}
 
+  /* ---------- 趋势图识别 ---------- */
+  .tstatus{margin-top:9px;font-size:12px;color:var(--ink3);line-height:1.55;min-height:16px}
+  .tstatus.ok{color:var(--pass)} .tstatus.err{color:var(--reject)}
+  .tresult{display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--line2)}
+  .tresult.on{display:block}
+  .thead{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:9px}
+  .tbadge{
+    font-size:15px;font-weight:700;padding:3px 10px;border-radius:8px;
+    background:var(--accentbg);color:var(--accent);border:1px solid #cfe0ec;
+  }
+  .tbadge.warn{background:var(--reviewbg);color:var(--review);border-color:var(--reviewbd)}
+  .tbadge.bad{background:var(--rejectbg);color:var(--reject);border-color:var(--rejectbd)}
+  .tconf{margin-left:auto;font-size:11.5px;color:var(--ink3)}
+  .tbar{height:5px;border-radius:5px;background:#eef2f6;overflow:hidden;margin-bottom:10px}
+  .tbar i{display:block;height:100%;background:var(--accent);border-radius:5px;transition:width .3s}
+  .tbar i.low{background:var(--review)}
+  .tchips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:9px}
+  .tchip{font-size:11px;padding:1px 7px;border-radius:20px;background:#f1f4f8;color:var(--ink2);border:1px solid var(--line)}
+  .tevidence{margin:0;padding-left:16px;font-size:12px;color:var(--ink2);line-height:1.7}
+  .tevidence li{margin-bottom:2px}
+  .tunc{margin-top:8px;padding:8px 10px;border-radius:8px;background:var(--reviewbg);border:1px solid var(--reviewbd);font-size:11.5px;color:#7a5510;line-height:1.6}
+  .tact{display:flex;gap:8px;margin-top:10px}
+
   /* ---------- rules ---------- */
   .rulebar{display:flex;gap:9px;flex-wrap:wrap;align-items:center;font-size:12.5px;color:var(--ink2)}
   .rulebar label{display:inline-flex;align-items:center;gap:6px;color:var(--ink3)}
@@ -300,6 +323,28 @@
       </div>
 
       <div class="card">
+        <div class="card-h"><h2>趋势图识别</h2><span class="aside">走势图 → 形态（本地识别）</span></div>
+        <div class="field" style="margin-bottom:10px">
+          <label class="fl" for="trendRange">时间范围
+            <button class="q" type="button" aria-label="时间范围说明">?<span class="bub"><b>为何要选：</b>判断"季节性"需要知道横轴总跨度，否则无法把图形换算成 12 个月的滞后周期。<br>选错会导致周期判断失效，其余形态不受影响。</span></button>
+          </label>
+          <select id="trendRange">
+            <option value="12">过去 12 个月</option>
+            <option value="60">过去 5 年</option>
+            <option value="3">过去 90 天</option>
+            <option value="1">过去 7 天</option>
+          </select>
+        </div>
+        <div class="drop" id="tdrop" tabindex="0" role="button" aria-label="上传走势图">
+          <div class="ic">⌁</div>
+          <b>点击选择、拖入或粘贴走势图</b>
+          <small>Google Trends 截图效果最佳；宽度建议 ≥ 800px，需包含完整曲线与时间轴</small>
+        </div>
+        <div id="tStatus" class="tstatus"></div>
+        <div id="tResult" class="tresult"></div>
+      </div>
+
+      <div class="card">
         <div class="card-h"><h2>实测数据</h2><span class="aside">带 <span style="color:var(--reject)">*</span> 为必填项</span></div>
         <div class="grid2">
           <div class="field span2">
@@ -348,6 +393,10 @@
               <option value="seasonal">季节（某几个月才有）</option>
               <option value="declining">下降（已过峰，持续走低）</option>
               <option value="spike">尖刺（一根尖刺后归零）</option>
+              <option value="hump">驼峰（单峰后回落）</option>
+              <option value="box">箱体震荡（长期横盘）</option>
+              <option value="multi">多峰（需求不稳定）</option>
+              <option value="stair">阶梯上升（分段抬升）</option>
             </select>
             <div class="err" id="trend-err"></div>
           </div>
@@ -479,7 +528,12 @@
   const NUM_FIELDS = ['intitle','volume','kd','ref','tKd','tRef','tKgr','tRisk'];
   const DRAFT_KEY = 'kj.draft.v1';
 
-  const TREND = {rising:'上升', stable:'平稳', seasonal:'季节', declining:'下降', spike:'尖刺'};
+  const TREND = {
+    rising:'上升', stable:'平稳', seasonal:'季节', declining:'下降', spike:'尖刺',
+    hump:'驼峰', box:'箱体震荡', multi:'多峰', stair:'阶梯上升'
+  };
+  // 视为"窗口可能已关"的形态（影响硬指标与风险）
+  const TREND_BAD = ['declining', 'spike', 'hump'];
   const SERP  = {dedicated:'专站首页为主', mixed:'混合', inner:'大站内页为主'};
 
   /* ============ 三档预设 ============ */
@@ -709,7 +763,7 @@
   /* ============ 核心判定（纯函数，无 DOM） ============ */
   function evaluate(d, rules){
     const isNew = !!d.isNew;
-    const trendBad = d.trend === 'declining' || d.trend === 'spike';
+    const trendBad = TREND_BAD.indexOf(d.trend) >= 0;
     const kgr = (d.intitle !== null && d.volume !== null && d.volume > 0) ? d.intitle / d.volume : null;
     const kgrHigh = kgr !== null && kgr > rules.kgr;
 
@@ -748,6 +802,8 @@
     if(d.serp === 'mixed')              risks.push('前 10 名中已有部分专注该词的独立站点');
     if(!isNew && d.serp === 'dedicated') risks.push('前 10 名均为专注该词的独立站点');
     if(d.trend === 'seasonal')          risks.push('季节词：仅个别月份有搜索量');
+    if(d.trend === 'multi')             risks.push('多峰形态：需求不稳定，难以判断主推时机');
+    if(d.trend === 'box')               risks.push('长期横盘：增长空间有限');
     if(!isNew && kgrHigh)               risks.push('KGR ' + kgr.toFixed(3) + ' 高于门槛 ' + rules.kgr);
     if(!d.domainOk)                     risks.push('.com 已被注册');
     if(isNew && d.intitle !== null && d.intitle > 5 && d.intitle <= aiLimit)
@@ -1238,6 +1294,244 @@
       if(it.type && it.type.indexOf('image/') === 0){
         const f = it.getAsFile();
         if(f){ handleFile(f); break; }
+      }
+    }
+  });
+
+
+  /* ============ 趋势图识别 ============ */
+  const tdrop=$('tdrop'), tStatus=$('tStatus'), tResult=$('tResult'), trendRange=$('trendRange');
+  let tCv=null, tBusy=false, tLook=null;
+
+  function setT(msg,kind){ tStatus.textContent=msg||''; tStatus.className='tstatus'+(kind?' '+kind:''); }
+
+  // 从图像提取曲线：按列取蓝色像素中位数
+  function extractSeries(img){
+    if(!tCv) tCv=document.createElement('canvas');
+    tCv.width=img.naturalWidth; tCv.height=img.naturalHeight;
+    const ctx=tCv.getContext('2d',{willReadFrequently:true});
+    ctx.clearRect(0,0,tCv.width,tCv.height);
+    ctx.drawImage(img,0,0);
+    const W=tCv.width,H=tCv.height,px=ctx.getImageData(0,0,W,H).data;
+    const isLine=(r,g,b)=> b>185 && r<135 && g>85 && g<195 && (b-r)>85 && (b-g)>45;
+
+    let minX=1e9,maxX=-1,minY=1e9,maxY=-1;
+    const col=new Map();
+    for(let y=0;y<H;y++){
+      for(let x=0;x<W;x++){
+        const i=(y*W+x)*4;
+        if(isLine(px[i],px[i+1],px[i+2])){
+          if(x<minX)minX=x; if(x>maxX)maxX=x; if(y<minY)minY=y; if(y>maxY)maxY=y;
+          let a=col.get(x); if(!a){a=[];col.set(x,a);} a.push(y);
+        }
+      }
+    }
+    if(maxX<0 || maxX-minX<20) return {ok:false, reason:'未检测到曲线。请确认图片是 Google Trends 截图且未加滤镜。'};
+
+    const xs=[...col.keys()].sort((a,b)=>a-b);
+    const median=a=>{a.sort((x,y)=>x-y);return a[Math.floor(a.length/2)];};
+    const n=maxX-minX+1, series=new Array(n).fill(null);
+    xs.forEach(x=>{ series[x-minX]=median(col.get(x)); });
+    for(let i=0;i<n;i++){
+      if(series[i]===null){
+        let l=i-1,r=i+1;
+        while(l>=0&&series[l]===null)l--;
+        while(r<n&&series[r]===null)r++;
+        series[i]= l>=0&&r<n ? (series[l]+series[r])/2 : (l>=0?series[l]:(r<n?series[r]:maxY));
+      }
+    }
+    const coverage=xs.length/n;
+    const h=(maxY-minY)||1;
+    const vals=series.map(y=>(maxY-y)/h);   // 0..1，相对曲线自身高度
+    return {ok:true, vals, coverage, box:[minX,minY,maxX,maxY], W, H, plotW:maxX-minX};
+  }
+
+  function trendFeatures(r, months){
+    const v=r.vals, N=v.length;
+    const mean=v.reduce((a,b)=>a+b,0)/N;
+    const sd=Math.sqrt(v.reduce((a,b)=>a+(b-mean)**2,0)/N);
+
+    // 线性回归
+    let sx=0,sy=0,sxx=0,sxy=0;
+    v.forEach((y,i)=>{const t=i/(N-1); sx+=t; sy+=y; sxx+=t*t; sxy+=t*y;});
+    const slope=(N*sxy-sx*sy)/(N*sxx-sx*sx||1);
+    const icpt=(sy-slope*sx)/N;
+    let ssr=0,sst=0;
+    v.forEach((y,i)=>{const t=i/(N-1);const p=icpt+slope*t; ssr+=(y-p)**2; sst+=(y-mean)**2;});
+    const r2=sst>0?Math.max(0,1-ssr/sst):0;
+
+    // 平滑后找峰
+    const win=Math.max(3,Math.round(N/90));
+    const sm=v.map((_,i)=>{let a=0,c=0;for(let k=-win;k<=win;k++){const j=i+k;if(j>=0&&j<N){a+=v[j];c++;}}return a/c;});
+    const peak=Math.max(...sm), peakIdx=sm.indexOf(peak);
+    const peakWidth=sm.filter(x=>x>=peak*0.9).length/N;
+    const sorted=[...v].sort((a,b)=>a-b);
+    const p50=sorted[Math.floor(N*0.5)]||1e-6;
+    const peakOverBase=peak/p50;
+
+    // 多峰计数
+    let peakCount=0, lastPeak=-1e9;
+    const thr=mean+0.5*sd;
+    for(let i=1;i<N-1;i++){
+      if(sm[i]>thr && sm[i]>=sm[i-1] && sm[i]>sm[i+1] && (i-lastPeak)>N*0.08){ peakCount++; lastPeak=i; }
+    }
+
+    // 12 个月自相关（用于季节性）
+    const lag=Math.max(1,Math.round(N/(months/12)));
+    let num=0,den=0;
+    for(let i=0;i<N-lag;i++) num+=(v[i]-mean)*(v[i+lag]-mean);
+    for(let i=0;i<N;i++) den+=(v[i]-mean)**2;
+    const ac=den?num/den:0;
+
+    const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0;
+    const tail=avg(v.slice(Math.floor(N*0.9)));
+    const mid=avg(v.slice(Math.floor(N*0.35),Math.floor(N*0.65)));
+    const tailVsMid=mid>1e-6?tail/mid:1;
+
+    return {N, mean, sd, cv:sd/(mean||1e-6), slope, r2, peak, peakWidth, peakPos:peakIdx/(N-1),
+      peakOverBase, peakCount, ac, tailVsMid, coverage:r.coverage};
+  }
+
+  function classifyTrend(f, months){
+    const c=[];
+    const add=(key,score,why)=>c.push({key,score:+score.toFixed(2),why});
+    const pct=x=>(x*100).toFixed(1);
+
+    if(f.peakWidth<0.05 && f.peakOverBase>3)
+      add('spike',0.92,`峰值宽度仅 ${pct(f.peakWidth)}%（<5%），峰值为基线的 ${f.peakOverBase.toFixed(1)} 倍`);
+    else if(f.peakWidth<0.09 && f.peakOverBase>2.5)
+      add('spike',0.7,`峰值宽度 ${pct(f.peakWidth)}%、峰值/基线 ${f.peakOverBase.toFixed(1)} 倍，具备尖刺特征但未达典型阈值`);
+
+    if(f.peakPos>=0.3 && f.peakPos<=0.7 && Math.abs(f.slope)<0.28 && f.tailVsMid<0.68 && f.peakWidth<0.25)
+      add('hump',0.86,`峰位于全程 ${pct(f.peakPos)}% 处，尾段为中段的 ${f.tailVsMid.toFixed(2)} 倍，无长期方向（斜率 ${f.slope.toFixed(2)}）`);
+
+    if(Math.abs(f.slope)<0.2 && f.cv<0.45 && f.peakWidth>0.15)
+      add('box',0.8,`斜率 ${f.slope.toFixed(2)}、波动系数 ${f.cv.toFixed(2)}，长期在区间内震荡`);
+
+    if(f.slope>0.45 && f.r2>0.55) add('rising',0.85,`斜率 +${f.slope.toFixed(2)}、R²=${f.r2.toFixed(2)}，趋势线拟合良好`);
+    else if(f.slope>0.25 && f.tailVsMid>1.6) add('rising',0.62,`尾段为中段的 ${f.tailVsMid.toFixed(2)} 倍，整体斜率为正但拟合度低（R²=${f.r2.toFixed(2)}）`);
+
+    if(f.slope<-0.45 && f.r2>0.5) add('declining',0.85,`斜率 ${f.slope.toFixed(2)}、R²=${f.r2.toFixed(2)}，呈持续下行`);
+    else if(f.slope<-0.25 && f.tailVsMid<0.6) add('declining',0.62,`尾段仅为中段的 ${f.tailVsMid.toFixed(2)} 倍，整体向下`);
+
+    if(f.slope>0.28 && f.r2<0.5 && f.tailVsMid>1.5) add('stair',0.6,`整体斜率为正但拟合度低（R²=${f.r2.toFixed(2)}），呈分段抬升`);
+    if(f.peakCount>=2) add('multi',0.6,`检测到 ${f.peakCount} 个显著峰，需求不稳定`);
+    if(months>=24 && f.ac>0.35) add('seasonal',0.72,`12 个月滞后自相关 ${f.ac.toFixed(2)}，存在年度周期`);
+    if(Math.abs(f.slope)<0.15 && f.cv<0.3) add('stable',0.7,`斜率 ${f.slope.toFixed(2)}、波动系数 ${f.cv.toFixed(2)}，全年稳定`);
+
+    c.sort((a,b)=>b.score-a.score);
+    if(!c.length) add('stable',0.4,'未命中任何强特征，暂按平稳处理');
+
+    const best=c[0], second=c[1];
+    const sep=second?Math.max(0,1-second.score/Math.max(best.score,1e-6)):1;
+    let conf=best.score*(0.75+0.25*sep);
+    if(f.coverage<0.95) conf*=0.85;
+    if(f.coverage<0.8) conf*=0.8;
+
+    const mods=[];
+    if(f.tailVsMid>1.8) mods.push('末段拉升');
+    if(f.tailVsMid<0.55) mods.push('末段回落');
+    if(f.peakOverBase>3) mods.push('峰值突出');
+    if(f.r2<0.2) mods.push('无长期趋势');
+    if(f.cv>0.6) mods.push('波动较大');
+    if(f.peakCount>=2) mods.push(`${f.peakCount} 个峰`);
+
+    return {best, second, conf:Math.min(0.97,conf), mods, all:c.slice(0,3)};
+  }
+
+  function renderTrend(res, imgW){
+    const t=res.best, label=TREND[t.key]||t.key;
+    const kind = ['spike','declining','hump'].indexOf(t.key)>=0 ? 'bad'
+               : (['box','multi'].indexOf(t.key)>=0 ? 'warn' : '');
+    const confPct=Math.round(res.conf*100);
+    const low=res.conf<0.6;
+
+    let html='<div class="thead">'
+      + '<span class="tbadge '+kind+'">'+label+'</span>'
+      + '<span class="tconf">置信度 '+confPct+'%</span></div>'
+      + '<div class="tbar"><i class="'+(low?'low':'')+'" style="width:'+confPct+'%"></i></div>';
+
+    if(res.mods.length) html+='<div class="tchips">'+res.mods.map(m=>'<span class="tchip">'+m+'</span>').join('')+'</div>';
+
+    html+='<ul class="tevidence">';
+    html+='<li><b>主判据：</b>'+t.why+'</li>';
+    if(res.second) html+='<li><b>次选：</b>'+TREND[res.second.key]+'（'+res.second.score+'）— '+res.second.why+'</li>';
+    html+='<li><b>数据质量：</b>曲线覆盖率 '+(res.f.coverage*100).toFixed(1)+'%，图宽 '+imgW+'px</li>';
+    html+='</ul>';
+
+    if(low){
+      html+='<div class="tunc"><b>未明确归类的原因：</b>最佳与次选特征分差不足'
+        +(res.second?('（'+t.score+' vs '+res.second.score+'）'):'')
+        +'，或曲线覆盖率偏低。建议结合原图人工确认，或换更长/更短的周期再试一次。</div>';
+    }
+    html+='<div class="tact"><button class="btn sm primary" type="button" id="btnTApply">填入趋势形态：'+label+'</button>'
+      + '<button class="btn sm" type="button" id="btnTClear">清除</button></div>';
+
+    tResult.innerHTML=html;
+    tResult.classList.add('on');
+    tLook=t.key;
+
+    $('btnTApply').addEventListener('click', () => {
+      F.trend.value=t.key;
+      F.trend.dispatchEvent(new Event('change',{bubbles:true}));
+      toast('已填入趋势形态：'+label);
+    });
+    $('btnTClear').addEventListener('click', () => {
+      tResult.classList.remove('on'); tResult.innerHTML=''; tLook=null; setT('');
+      const im=tdrop.querySelector('img'); if(im){ URL.revokeObjectURL(im.src); im.remove(); }
+    });
+  }
+
+  async function analyzeTrendFile(file){
+    if(!file || !/^image\//.test(file.type)){ setT('请选择图片文件。','err'); return; }
+    if(tBusy){ setT('正在识别上一张图片，请稍候。'); return; }
+    tBusy=true;
+    const url=URL.createObjectURL(file);
+    const old=tdrop.querySelector('img'); if(old){ URL.revokeObjectURL(old.src); old.remove(); }
+    const im=document.createElement('img'); im.src=url; im.alt='走势图预览'; tdrop.appendChild(im);
+
+    try{
+      await new Promise((res,rej)=>{ if(im.complete&&im.naturalWidth){res();return;} im.onload=res; im.onerror=rej; });
+      const months=parseFloat(trendRange.value)||12;
+      const ex=extractSeries(im);
+      if(!ex.ok){
+        tResult.classList.remove('on'); tResult.innerHTML=''; tLook=null;
+        setT(ex.reason,'err'); return;
+      }
+      const f=trendFeatures(ex, months);
+      const res=classifyTrend(f, months);
+      res.f=f;
+      renderTrend(res, im.naturalWidth);
+      if(im.naturalWidth<800) setT('提示：图像宽度不足 800px，识别结果可靠性下降。','err');
+      else if(ex.coverage<0.85) setT('提示：曲线覆盖率 '+(ex.coverage*100).toFixed(0)+'%，部分区段可能被遮挡或线条过细。','err');
+      else setT('识别完成：'+TREND[res.best.key]+'（置信度 '+Math.round(res.conf*100)+'%）','ok');
+    }catch(e){
+      tResult.classList.remove('on'); tResult.innerHTML=''; tLook=null;
+      setT('图片读取失败，请另存为 PNG/JPG 后重试。','err');
+    }finally{ tBusy=false; }
+  }
+
+  tdrop.addEventListener('click', () => {
+    const inp=document.createElement('input');
+    inp.type='file'; inp.accept='image/*';
+    inp.addEventListener('change', () => { if(inp.files&&inp.files[0]) analyzeTrendFile(inp.files[0]); });
+    inp.click();
+  });
+  tdrop.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' '){ e.preventDefault(); tdrop.click(); } });
+  tdrop.addEventListener('dragover', e => { e.preventDefault(); tdrop.classList.add('over'); });
+  tdrop.addEventListener('dragleave', () => tdrop.classList.remove('over'));
+  tdrop.addEventListener('drop', e => {
+    e.preventDefault(); tdrop.classList.remove('over');
+    const f=e.dataTransfer.files&&e.dataTransfer.files[0]; if(f) analyzeTrendFile(f);
+  });
+  document.addEventListener('paste', e => {
+    const tag=(e.target&&e.target.tagName)||'';
+    if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT') return;
+    const items=(e.clipboardData&&e.clipboardData.items)||[];
+    for(const it of items){
+      if(it.type&&it.type.indexOf('image/')===0){
+        const f=it.getAsFile();
+        if(f){ analyzeTrendFile(f); break; }
       }
     }
   });
