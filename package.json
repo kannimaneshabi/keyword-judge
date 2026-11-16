@@ -1,0 +1,17 @@
+{
+  "name": "keyword-judge",
+  "version": "1.0.0",
+  "private": true,
+  "description": "出海建站关键词可行性判定器（单页静态工具）",
+  "scripts": {
+    "dev": "python3 -m http.server 5173 --directory public",
+    "deploy": "wrangler deploy",
+    "deploy:dry": "wrangler deploy --dry-run --outdir dist"
+  },
+  "devDependencies": {
+    "wrangler": "^4.42.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

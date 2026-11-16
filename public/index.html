@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>关键词判定器 · 出海建站</title>
+<meta name="description" content="按三档标准判断一个关键词值不值得做：填 KD、所需外链网站数、趋势形态等实测数据，输出通过/待定/淘汰与理由。">
+<style>
+  *,*::before,*::after{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  :root{
+    --ink:#0f151c; --ink2:#46525f; --ink3:#7d8896; --ink4:#a4aebb;
+    --line:#e3e8ee; --line2:#eef2f6; --bg:#f6f8fa; --card:#fff;
+    --pass:#1a7a51; --passbg:#ecf7f1; --passbd:#cde9db;
+    --reject:#a9382d; --rejectbg:#fceeec; --rejectbd:#f0d4cf;
+    --review:#96690f; --reviewbg:#fdf6e6; --reviewbd:#efdfbc;
+    --accent:#1c5d86; --accentbg:#eef5fa;
+    --auto:#8a6a12; --autobg:#fdf8e6;
+    --r:13px;
+    --shadow:0 1px 2px rgba(16,24,40,.04), 0 6px 18px -8px rgba(16,24,40,.10);
+  }
+  body{
+    background:var(--bg); color:var(--ink);
+    font:15px/1.62 -apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Helvetica Neue",sans-serif;
+    -webkit-font-smoothing:antialiased; padding:28px 22px 72px;
+  }
+  .wrap{max-width:1180px;margin:0 auto}
+  button{font:inherit}
+
+  /* ---------- header ---------- */
+  .top{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:20px;flex-wrap:wrap}
+  .brand{display:inline-flex;align-items:center;gap:9px;font-weight:650;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+  h1{font-size:27px;line-height:1.2;letter-spacing:-.025em;font-weight:680;margin:9px 0 5px}
+  .sub{color:var(--ink2);font-size:14px;max-width:58ch;margin:0}
+  .top-actions{display:flex;gap:8px;align-items:center;padding-top:22px}
+  @media (max-width:700px){ .top-actions{padding-top:0} }
+
+  /* ---------- buttons ---------- */
+  .btn{
+    font-size:13.5px;font-weight:600;padding:9px 15px;border-radius:9px;border:1px solid var(--line);
+    background:#fff;color:var(--ink2);cursor:pointer;transition:.13s;white-space:nowrap;
+    display:inline-flex;align-items:center;gap:6px;
+  }
+  .btn:hover{border-color:#c6d0dd;color:var(--ink);background:#fcfdfe}
+  .btn:active{transform:translateY(.5px)}
+  .btn.primary{background:var(--ink);border-color:var(--ink);color:#fff}
+  .btn.primary:hover{background:#222c38;border-color:#222c38;color:#fff}
+  .btn.danger:hover{border-color:#dcb9b3;color:var(--reject);background:#fdf7f6}
+  .btn.sm{padding:6px 11px;font-size:12.5px}
+  .btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+  kbd{font:11px ui-monospace,SFMono-Regular,Menlo,monospace;background:#f0f3f7;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 5px;color:var(--ink2)}
+
+  /* ---------- layout ---------- */
+  .cols{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);gap:18px;align-items:start}
+  @media (max-width:960px){ .cols{grid-template-columns:1fr} }
+  .right{position:sticky;top:18px}
+  @media (max-width:960px){ .right{position:static} }
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:18px 20px}
+  .card + .card{margin-top:14px}
+  .card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:15px}
+  .card-h h2{margin:0;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);font-weight:680}
+  .card-h .aside{font-size:11.5px;color:var(--ink3)}
+
+  /* ---------- level switch ---------- */
+  .lvl-card{padding:16px 18px}
+  .lvl-row{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .seg{display:inline-flex;background:#eff3f7;border-radius:10px;padding:3px;gap:2px}
+  .seg button{
+    font-size:13.5px;font-weight:650;padding:7px 20px;border:0;background:transparent;color:var(--ink2);
+    border-radius:8px;cursor:pointer;transition:.13s;position:relative;
+  }
+  .seg button:hover:not(.on){color:var(--ink);background:rgba(255,255,255,.6)}
+  .seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 4px rgba(16,24,40,.12)}
+  .seg button .dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px;vertical-align:1px}
+  .lvl-note{font-size:12.5px;color:var(--ink3);line-height:1.6;margin:11px 0 0}
+  .lvl-note b{color:var(--ink2)}
+  .lvl-note .src{color:var(--accent)}
+  .lvl-note .mine{color:var(--auto)}
+
+  /* ---------- form ---------- */
+  .field{margin-bottom:13px}
+  .field:last-child{margin-bottom:0}
+  .fl{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--ink2);margin-bottom:5px}
+  .fl .req{color:var(--reject);font-weight:700}
+  .fl .opt{font-weight:400;color:var(--ink4);font-size:11.5px}
+  input[type=text],input[type=number],select{
+    width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font-size:14.5px;
+    font-family:inherit;color:var(--ink);background:#fff;transition:border-color .12s,box-shadow .12s;min-height:40px;
+  }
+  input[type=number]{font-variant-numeric:tabular-nums}
+  input::placeholder{color:var(--ink4)}
+  input:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(28,93,134,.12)}
+  input.auto,select.auto{border-color:#e4c974;background:var(--autobg)}
+  input.invalid,select.invalid{border-color:#d99;background:#fdf7f6}
+  select{appearance:none;padding-right:32px;background-image:url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237d8896' stroke-width='1.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+  .err{display:none;font-size:11.5px;color:var(--reject);margin-top:4px;line-height:1.5}
+  .err.on{display:block}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+  @media (max-width:600px){ .grid2{grid-template-columns:1fr} }
+  .span2{grid-column:1/-1}
+
+  /* tooltip */
+  .q{
+    width:15px;height:15px;border-radius:50%;border:1px solid #c8d1dc;background:#fff;color:var(--ink3);
+    font-size:10.5px;font-weight:700;line-height:1;display:inline-flex;align-items:center;justify-content:center;
+    cursor:help;position:relative;flex:0 0 auto;padding:0;
+  }
+  .q:hover,.q:focus-visible{border-color:var(--accent);color:var(--accent);outline:none;background:var(--accentbg)}
+  .q .bub{
+    display:none;position:absolute;left:50%;transform:translateX(-50%);bottom:calc(100% + 8px);width:250px;
+    background:#1a232e;color:#e9eef4;font-size:11.5px;font-weight:400;line-height:1.62;padding:9px 11px;
+    border-radius:8px;text-align:left;z-index:40;box-shadow:0 8px 22px rgba(16,24,40,.28);
+  }
+  .q .bub::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#1a232e}
+  .q .bub b{color:#fff}
+  .q .bub code{background:rgba(255,255,255,.12);padding:0 3px;border-radius:3px;font-size:11px}
+  .q:hover .bub,.q:focus-visible .bub{display:block}
+
+  .chk{display:inline-flex;align-items:center;gap:7px;font-size:13.5px;color:var(--ink2);cursor:pointer;margin-right:16px}
+  .chk input{width:15px;height:15px;accent-color:var(--accent);cursor:pointer;margin:0}
+
+  /* ---------- ocr ---------- */
+  .drop{
+    border:1.5px dashed #ccd6e2;border-radius:11px;padding:15px;text-align:center;cursor:pointer;
+    background:#fafcfe;transition:.14s;
+  }
+  .drop:hover,.drop.over{border-color:var(--accent);background:var(--accentbg)}
+  .drop .ic{font-size:18px;color:var(--ink3);line-height:1;margin-bottom:5px}
+  .drop b{display:block;font-size:13px;font-weight:650;margin-bottom:2px}
+  .drop small{display:block;font-size:11.5px;color:var(--ink3);line-height:1.6}
+  .drop img{max-width:100%;max-height:200px;border-radius:8px;border:1px solid var(--line);display:block;margin:0 auto}
+  #ocrStatus{margin-top:8px;font-size:12px;color:var(--ink3);line-height:1.55;min-height:16px}
+  #ocrStatus.ok{color:var(--pass)} #ocrStatus.err{color:var(--reject)}
+
+  /* ---------- rules ---------- */
+  .rulebar{display:flex;gap:9px;flex-wrap:wrap;align-items:center;font-size:12.5px;color:var(--ink2)}
+  .rulebar label{display:inline-flex;align-items:center;gap:6px;color:var(--ink3)}
+  .rulebar input{width:70px;padding:5px 8px;border:1px solid var(--line);border-radius:7px;font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums;min-height:32px}
+  .toggles{display:grid;gap:1px;margin-top:12px}
+  .tg{display:flex;align-items:flex-start;gap:11px;padding:9px 0;border-top:1px solid var(--line2)}
+  .sw{position:relative;flex:0 0 auto;width:34px;height:20px;margin-top:2px}
+  .sw input{position:absolute;inset:0;opacity:0;width:100%;height:100%;margin:0;cursor:pointer;z-index:2}
+  .sw i{position:absolute;inset:0;background:#d3dae3;border-radius:20px;transition:background .16s}
+  .sw i::after{content:"";position:absolute;top:3px;left:3px;width:14px;height:14px;background:#fff;border-radius:50%;transition:transform .16s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+  .sw input:checked + i{background:var(--accent)}
+  .sw input:checked + i::after{transform:translateX(14px)}
+  .sw input:focus-visible + i{box-shadow:0 0 0 3px rgba(28,93,134,.18)}
+  .tg-t{flex:1;min-width:0}
+  .tg-t b{display:block;font-size:12.5px;font-weight:650;color:var(--ink);margin-bottom:1px}
+  .tg-t small{display:block;font-size:11px;color:var(--ink3);line-height:1.5}
+  .tg-t input[type=number]{width:48px;padding:2px 5px;font-size:11.5px;margin:0 3px;vertical-align:middle;min-height:24px}
+
+  /* ---------- result ---------- */
+  .verdict{border-radius:11px;padding:15px 17px;border:1px solid transparent;margin-bottom:13px}
+  .verdict.pass{background:var(--passbg);border-color:var(--passbd)}
+  .verdict.reject{background:var(--rejectbg);border-color:var(--rejectbd)}
+  .verdict.review{background:var(--reviewbg);border-color:var(--reviewbd)}
+  .verdict.empty{background:#f1f4f8;border-color:var(--line)}
+  .verdict.warn2{background:#fdf7f6;border-color:var(--rejectbd)}
+  .vtop{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .vicon{width:20px;height:20px;flex:0 0 auto}
+  .vbadge{font-size:19px;font-weight:700;letter-spacing:-.015em}
+  .pass .vbadge{color:var(--pass)} .reject .vbadge,.warn2 .vbadge{color:var(--reject)}
+  .review .vbadge{color:var(--review)} .empty .vbadge{color:var(--ink3)}
+  .vkw{font-size:12.5px;color:var(--ink2);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;word-break:break-all}
+  .vreason{margin-top:7px;font-size:13px;color:var(--ink2);line-height:1.62}
+  .vhint{margin-top:9px;padding-top:9px;border-top:1px dashed rgba(0,0,0,.08);font-size:12px;color:var(--ink2);line-height:1.6}
+  .vhint b{font-weight:650}
+
+  .chips{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:15px}
+  .chip{border:1px solid var(--line);border-radius:9px;padding:7px 8px;text-align:center;background:#fbfcfd;transition:.13s}
+  .chip .l{display:block;font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);margin-bottom:1px}
+  .chip .v{font-size:12.5px;font-weight:700}
+  .chip.pass{background:var(--passbg);border-color:var(--passbd)} .chip.pass .v{color:var(--pass)}
+  .chip.reject{background:var(--rejectbg);border-color:var(--rejectbd)} .chip.reject .v{color:var(--reject)}
+  .chip.review{background:var(--reviewbg);border-color:var(--reviewbd)} .chip.review .v{color:var(--review)}
+  .chip.cur{box-shadow:0 0 0 2px rgba(28,93,134,.4)}
+
+  table.rows{width:100%;border-collapse:collapse;font-size:13px}
+  table.rows tr{border-bottom:1px solid var(--line2)}
+  table.rows tr:last-child{border-bottom:none}
+  table.rows td{padding:7px 0;vertical-align:top}
+  table.rows td.k{color:var(--ink2);width:43%}
+  table.rows td.v{text-align:right;font-variant-numeric:tabular-nums;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:600}
+  .ok{color:var(--pass)} .bad{color:var(--reject)} .warn{color:var(--review)} .muted{color:var(--ink4);font-weight:400}
+  td .note{display:block;font-weight:400;font-family:inherit;font-size:11px;color:var(--ink3);margin-top:1px}
+
+  .mdbox{margin-top:14px;padding-top:13px;border-top:1px solid var(--line2)}
+  .mdbox textarea{
+    width:100%;min-height:84px;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:#fbfcfd;
+    font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--ink2);resize:vertical;
+  }
+  .md-actions{display:flex;gap:8px;align-items:center;margin-top:8px}
+
+  /* history */
+  .hist{list-style:none;margin:0;padding:0;max-height:242px;overflow:auto}
+  .hist li{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--line2);font-size:12.5px;cursor:pointer}
+  .hist li:last-child{border-bottom:none}
+  .hist li:hover .hk{color:var(--accent)}
+  .hk{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--ink);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .hv{font-weight:700;font-size:11.5px;padding:1px 7px;border-radius:20px;white-space:nowrap}
+  .hv.pass{background:var(--passbg);color:var(--pass)} .hv.reject{background:var(--rejectbg);color:var(--reject)}
+  .hv.review{background:var(--reviewbg);color:var(--review)}
+  .empty-tip{font-size:12.5px;color:var(--ink4);text-align:center;padding:14px 0}
+
+  /* toast */
+  #toast{
+    position:fixed;left:50%;bottom:26px;transform:translate(-50%,14px);opacity:0;pointer-events:none;
+    background:#1a232e;color:#fff;font-size:13px;padding:9px 16px;border-radius:9px;
+    box-shadow:0 10px 26px rgba(16,24,40,.26);transition:.22s;z-index:99;
+  }
+  #toast.on{opacity:1;transform:translate(-50%,0)}
+
+  footer{margin-top:26px;font-size:11.5px;color:var(--ink3);line-height:1.75}
+  footer code{background:#edf1f5;padding:1px 5px;border-radius:4px;font-size:11px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <div>
+      <div class="brand">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true"><circle cx="7.5" cy="7.5" r="6" stroke="#1c5d86" stroke-width="1.3"/><path d="M4.5 7.7l2 2 4-4.2" stroke="#1c5d86" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        关键词判定器
+      </div>
+      <h1>一个词能不能做，用数字说话</h1>
+      <p class="sub">填实测数据 → 输出「通过 / 待定 / 淘汰」与逐项理由。三档标准可切，判定依据标注到原文行号。</p>
+    </div>
+    <div class="top-actions">
+      <button class="btn" id="btnDemo" type="button">填入示例</button>
+      <button class="btn danger" id="btnClear" type="button">清空</button>
+    </div>
+  </div>
+
+  <!-- 档位 -->
+  <div class="card lvl-card">
+    <div class="lvl-row">
+      <div class="seg" id="seg" role="tablist" aria-label="判定档位">
+        <button type="button" data-lv="strict" role="tab">严格</button>
+        <button type="button" data-lv="medium" role="tab">中等</button>
+        <button type="button" data-lv="loose" role="tab">宽松</button>
+      </div>
+      <div class="aside" id="actLv" style="font-size:12px;color:var(--ink3)"></div>
+    </div>
+    <p class="lvl-note" id="lvlDesc"></p>
+  </div>
+
+  <div class="cols" style="margin-top:14px">
+    <!-- 左 -->
+    <div>
+      <div class="card">
+        <div class="card-h"><h2>截图识别</h2><span class="aside">可选 · 识别结果需核对</span></div>
+        <div class="drop" id="drop" tabindex="0" role="button" aria-label="上传截图">
+          <div class="ic">⌘</div>
+          <b>点击选择 / 拖入 / 直接粘贴（⌘V）</b>
+          <small>对准 Ahrefs 的 KD 与「~N websites」、谷歌的「找到约 X 条结果」效果最好</small>
+        </div>
+        <div id="ocrStatus"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><h2>实测数据</h2><span class="aside">带 <span style="color:var(--reject)">*</span> 为判定必需</span></div>
+        <div class="grid2">
+          <div class="field span2">
+            <label class="fl" for="kw">关键词 <span class="req">*</span>
+              <button class="q" type="button" aria-label="关键词填写说明">?<span class="bub"><b>怎么填：</b>从 Trends 或搜索结果里原样复制英文词。<br>不要翻译、不加引号；单复数算两个词，按用户真实搜法填。</span></button>
+            </label>
+            <input type="text" id="kw" placeholder="random country generator" autocomplete="off" spellcheck="false">
+            <div class="err" id="kw-err"></div>
+          </div>
+
+          <div class="field">
+            <label class="fl" for="intitle">intitle 结果数
+              <button class="q" type="button" aria-label="intitle 取数说明">?<span class="bub"><b>怎么取：</b>谷歌搜 <code>intitle:"你的词"</code>（带引号）→ 点搜索框下方「工具」→ 看右下角「找到约 X 条结果」。<br>不带引号数字会偏大，不能用。</span></button>
+            </label>
+            <input type="number" id="intitle" min="1" step="1" placeholder="1400" inputmode="numeric">
+            <div class="err" id="intitle-err"></div>
+          </div>
+
+          <div class="field">
+            <label class="fl" for="volume">月搜索量 <span class="opt">可选</span>
+              <button class="q" type="button" aria-label="月搜索量说明">?<span class="bub"><b>可留空：</b>没有 Ads 账号时，用 Trends 参照词估（候选曲线是参照词的几倍 × 参照日量 × 30）。<br>不填则跳过 KGR，其余判定照常。</span></button>
+            </label>
+            <input type="number" id="volume" min="1" step="1" placeholder="20000" inputmode="numeric">
+            <div class="err" id="volume-err"></div>
+          </div>
+
+          <div class="field">
+            <label class="fl" for="kd">Ahrefs KD <span class="req">*</span>
+              <button class="q" type="button" aria-label="KD 取数说明">?<span class="bub"><b>怎么取：</b>打开 <code>ahrefs.com/keyword-difficulty</code> 输入词，看圆环里的数字（0—100）。<br>别和 Semrush 的 KD 百分比比大小，两家算法不同。</span></button>
+            </label>
+            <input type="number" id="kd" min="0" max="100" step="1" placeholder="54" inputmode="numeric">
+            <div class="err" id="kd-err"></div>
+          </div>
+
+          <div class="field">
+            <label class="fl" for="refdomains">所需外链网站数 <span class="req">*</span>
+              <button class="q" type="button" aria-label="外链数取数说明">?<span class="bub"><b>怎么取：</b>同一个 Ahrefs 页面那句话 <code>…need followed backlinks from ~N websites</code>，取 N。<br>教程说这个数比 KD 本身更直观。</span></button>
+            </label>
+            <input type="number" id="refdomains" min="0" step="1" placeholder="99" inputmode="numeric">
+            <div class="err" id="refdomains-err"></div>
+          </div>
+
+          <div class="field">
+            <label class="fl" for="trend">趋势形态 <span class="req">*</span>
+              <button class="q" type="button" aria-label="趋势判定说明">?<span class="bub"><b>怎么判：</b>Trends 分别拉 12 个月与 5 年。<br>只在某几个月有量 → 季节<br>一根尖刺后归零 → 尖刺<br>整体持续走低 → 下降<br>常年有量 → 平稳</span></button>
+            </label>
+            <select id="trend">
+              <option value="">请选择…</option>
+              <option value="rising">上升（新词起量）</option>
+              <option value="stable">平稳（全年有量）</option>
+              <option value="seasonal">季节（某几个月才有）</option>
+              <option value="declining">下降（已过峰，持续走低）</option>
+              <option value="spike">尖刺（一根尖刺后归零）</option>
+            </select>
+            <div class="err" id="trend-err"></div>
+          </div>
+
+          <div class="field span2">
+            <label class="fl" for="serp">前 10 名构成
+              <button class="q" type="button" aria-label="SERP 判定说明">?<span class="bub"><b>怎么判：</b>谷歌搜这个词，看前 10 是「专做这个词的站的首页」还是「大站的一个内页」。<br>内页多 = 没人专门做 = 你的机会。</span></button>
+            </label>
+            <select id="serp">
+              <option value="">请选择…</option>
+              <option value="dedicated">专站首页为主</option>
+              <option value="mixed">混合（专站 + 大站内页）</option>
+              <option value="inner">大站内页为主</option>
+            </select>
+            <div class="err" id="serp-err"></div>
+          </div>
+
+          <div class="field span2">
+            <label class="fl">附加标记</label>
+            <label class="chk"><input type="checkbox" id="brand"> 品牌词 / 官方产品名</label>
+            <label class="chk"><input type="checkbox" id="sitelinks"> 前 10 有 Sitelinks</label>
+            <label class="chk"><input type="checkbox" id="domain" checked> .com 可注册</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><h2>门槛与附加规则</h2><span class="aside">改任意一项 → 转为「自定义」</span></div>
+        <div class="rulebar">
+          <label>KD &lt; <input type="number" id="tKd" value="10" min="1" max="100"></label>
+          <label>外链站 &lt; <input type="number" id="tRef" value="10" min="1" max="999"></label>
+          <label>KGR &lt; <input type="number" id="tKgr" value="0.25" min="0.01" max="10" step="0.05"></label>
+        </div>
+        <div class="toggles">
+          <div class="tg">
+            <label class="sw"><input type="checkbox" id="sBrand" checked><i></i></label>
+            <div class="tg-t"><b>品牌词一票否决</b><small>原文 g4 L223「官方网站会稳居第一，你拿不到第一」</small></div>
+          </div>
+          <div class="tg">
+            <label class="sw"><input type="checkbox" id="sTrend"><i></i></label>
+            <div class="tg-t"><b>趋势下降 / 尖刺 视为硬指标</b><small>原文 g4 L167「不是完全不能做……关键是你要知道自己在做什么」</small></div>
+          </div>
+          <div class="tg">
+            <label class="sw"><input type="checkbox" id="sRisk" checked><i></i></label>
+            <div class="tg-t"><b>风险 ≥ <input type="number" id="tRisk" value="2" min="1" max="9"> 项判为「待定」</b><small>此机制为我设计，教程无对应规定</small></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:9px;margin-top:14px;flex-wrap:wrap">
+          <button class="btn primary" id="btnJudge" type="button">判定 <kbd>⌘↵</kbd></button>
+          <button class="btn" id="btnExport" type="button" disabled>导出记录</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右 -->
+    <div class="right">
+      <div class="card">
+        <div class="card-h"><h2>结论</h2><span class="aside" id="verdictAside"></span></div>
+        <div class="verdict empty" id="verdict">
+          <div class="vtop"><span class="vbadge" id="vBadge">待输入</span><span class="vkw" id="vKw"></span></div>
+          <div class="vreason" id="vReason">填好必需项后点「判定」，或按 <kbd>⌘↵</kbd>。</div>
+        </div>
+        <div class="vhint" id="vHint" style="display:none"></div>
+        <div class="chips" id="chips"></div>
+        <table class="rows" id="rows"></table>
+        <div class="mdbox" id="mdWrap" style="display:none">
+          <label class="fl" for="md">可直接粘贴进表 B 的一行</label>
+          <textarea id="md" readonly></textarea>
+          <div class="md-actions">
+            <button class="btn sm" id="btnCopy" type="button">复制这一行</button>
+            <span style="font-size:11.5px;color:var(--ink4)">含档位与规则签名，便于事后复查</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><h2>本次记录</h2><span class="aside" id="histCount">0 条</span></div>
+        <ul class="hist" id="hist"></ul>
+        <div class="empty-tip" id="histTip">判定过的词会出现在这里，点一下可回填数据。</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    硬指标出处：<code>KD&lt;10</code>、<code>外链站&lt;10</code>（OpenGeFei · 分支 <code>claude/ecstatic-gauss-12hlsv</code> · commit <code>4b9243a</code> · g4 L200 / g3 L40）；<code>KGR&lt;0.25</code>（g4 L179，转述群友奥赛）；趋势三形态（g4 L161—166）；<code>KD&lt;29</code>（g4 L201「保小图大」）。<br>
+    中等档的外链阈值、宽松档的 <code>KD&lt;49</code> / <code>外链&lt;50</code>、「趋势硬指标」「风险计数」均为我的设定，非原文规定，可随时改。截图识别依赖 Tesseract.js（首次需联网），结果仅作辅助，务必核对。
+  </footer>
+</div>
+
+<div id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const F = {
+    kw:$('kw'), intitle:$('intitle'), volume:$('volume'), kd:$('kd'), ref:$('refdomains'),
+    trend:$('trend'), serp:$('serp'), brand:$('brand'), sitelinks:$('sitelinks'), domain:$('domain'),
+    tKd:$('tKd'), tRef:$('tRef'), tKgr:$('tKgr'),
+    sBrand:$('sBrand'), sTrend:$('sTrend'), sRisk:$('sRisk'), tRisk:$('tRisk')
+  };
+  const NUM_FIELDS = ['intitle','volume','kd','ref','tKd','tRef','tKgr','tRisk'];
+  const DRAFT_KEY = 'kj.draft.v1';
+
+  const TREND = {rising:'上升', stable:'平稳', seasonal:'季节', declining:'下降', spike:'尖刺'};
+  const SERP  = {dedicated:'专站首页为主', mixed:'混合', inner:'大站内页为主'};
+
+  /* ============ 三档预设 ============ */
+  const PRESETS = {
+    strict: {
+      name:'严格', kd:10, ref:10, kgr:0.25, trendHard:true, brandVeto:true, riskGate:2,
+      desc:'<b>严格 —— 教程第一个练手站口径</b>：KD &lt; 10、所需外链站 &lt; 10、KGR &lt; 0.25、趋势下降或尖刺直接否决、品牌词一票否决、风险 ≥2 项判待定。<span class="src">这套数值全部有原文出处。</span>',
+      color:'#a9382d'
+    },
+    medium: {
+      name:'中等', kd:29, ref:25, kgr:0.5, trendHard:false, brandVeto:true, riskGate:3,
+      desc:'<b>中等 —— 第二、三个站</b>：KD &lt; 29、所需外链站 &lt; 25、KGR &lt; 0.5、趋势只警告、品牌词仍否决、风险 ≥3 项判待定。<span class="src">KD&lt;29 出自原文「保小图大」</span>；<span class="mine">外链 25 与 KGR 0.5 是按同倍数推的，非原文。</span>',
+      color:'#96690f'
+    },
+    loose: {
+      name:'宽松', kd:49, ref:50, kgr:1, trendHard:false, brandVeto:false, riskGate:0,
+      desc:'<b>宽松 —— 追新词 / 热点</b>：KD &lt; 49、所需外链站 &lt; 50、KGR &lt; 1、趋势与品牌词只警告、风险不拦截。适合你清楚自己在赌什么的时候用。<span class="mine">KD 0—49 借用原文的筛词口径，其余为我的设定。</span>',
+      color:'#1c5d86'
+    }
+  };
+  let level = 'strict';
+  let history = [];      // {kw, data, rules, cls, label, level, md}
+
+  /* ============ 工具 ============ */
+  function toNum(el){
+    const raw = String(el.value).trim();
+    if(raw === '') return null;
+    const v = Number(raw.replace(/,/g,''));
+    return Number.isFinite(v) ? v : NaN;
+  }
+  const fmt = n => Number(n).toLocaleString('en-US');
+  function toast(msg){
+    const t = $('toast'); t.textContent = msg; t.classList.add('on');
+    clearTimeout(toast._t); toast._t = setTimeout(()=>t.classList.remove('on'), 1900);
+  }
+  function setErr(key, msg){
+    const box = $(key + '-err'); const el = F[key];
+    if(!box) return;
+    box.textContent = msg || '';
+    box.classList.toggle('on', !!msg);
+    if(el) el.classList.toggle('invalid', !!msg);
+  }
+  function clearErrs(){ ['kw','intitle','volume','kd','refdomains','trend','serp'].forEach(k=>setErr(k,'')); }
+
+  /* ============ 校验 ============ */
+  function validate(needAll){
+    clearErrs();
+    const errs = [];
+    const kw = F.kw.value.trim();
+    if(!kw){ setErr('kw','必填：从 Trends 或搜索结果里复制英文关键词'); errs.push('关键词'); }
+    else if(/[\u4e00-\u9fa5]/.test(kw)){ setErr('kw','含中文字符，海外站要用英文原词'); errs.push('关键词'); }
+    else if(kw.length > 80){ setErr('kw','过长（>80 字符），确认是否粘贴了整段'); errs.push('关键词'); }
+
+    const kd = toNum(F.kd);
+    if(kd === null && needAll){ setErr('kd','必填'); errs.push('KD'); }
+    else if(Number.isNaN(kd)){ setErr('kd','不是有效数字'); errs.push('KD'); }
+    else if(kd !== null && (kd < 0 || kd > 100)){ setErr('kd','KD 取值范围 0—100'); errs.push('KD'); }
+    else if(kd !== null && !Number.isInteger(kd)){ setErr('kd','KD 是整数'); errs.push('KD'); }
+
+    const ref = toNum(F.ref);
+    if(ref === null && needAll){ setErr('refdomains','必填'); errs.push('外链站数'); }
+    else if(Number.isNaN(ref)){ setErr('refdomains','不是有效数字'); errs.push('外链站数'); }
+    else if(ref !== null && ref < 0){ setErr('refdomains','不能为负数'); errs.push('外链站数'); }
+
+    const it = toNum(F.intitle), vol = toNum(F.volume);
+    if(Number.isNaN(it)){ setErr('intitle','不是有效数字'); errs.push('intitle 结果数'); }
+    else if(it !== null && it <= 0){ setErr('intitle','应为大于 0 的整数；若确实搜不到，说明没有供应量'); errs.push('intitle 结果数'); }
+    if(Number.isNaN(vol)){ setErr('volume','不是有效数字'); errs.push('月搜索量'); }
+    else if(vol !== null && vol <= 0){ setErr('volume','应为大于 0 的整数，或直接留空'); errs.push('月搜索量'); }
+
+    if(needAll && !F.trend.value){ setErr('trend','必选'); errs.push('趋势形态'); }
+    if(needAll && !F.serp.value){ setErr('serp','必选'); errs.push('前 10 构成'); }
+    return {ok: errs.length === 0, names: errs};
+  }
+
+  /* ============ 数据读取 ============ */
+  function readData(){
+    return {
+      kw: F.kw.value.trim(),
+      intitle: toNum(F.intitle), volume: toNum(F.volume),
+      kd: toNum(F.kd), ref: toNum(F.ref),
+      trend: F.trend.value, serp: F.serp.value,
+      brand: F.brand.checked, sitelinks: F.sitelinks.checked, domainOk: F.domain.checked
+    };
+  }
+  function readRules(){
+    return {
+      kd: toNum(F.tKd) ?? 10, ref: toNum(F.tRef) ?? 10, kgr: toNum(F.tKgr) ?? 0.25,
+      trendHard: F.sTrend.checked, brandVeto: F.sBrand.checked,
+      riskGate: F.sRisk.checked ? (toNum(F.tRisk) ?? 2) : 0
+    };
+  }
+
+  /* ============ 核心判定（纯函数，无 DOM） ============ */
+  function evaluate(d, rules){
+    const trendBad = d.trend === 'declining' || d.trend === 'spike';
+    const kgr = (d.intitle !== null && d.volume !== null && d.volume > 0) ? d.intitle / d.volume : null;
+    const kgrHigh = kgr !== null && kgr > rules.kgr;
+
+    // 硬指标（顺序固定，供表格与结论复用）
+    const hard = [
+      { key:'kd', label:'Ahrefs KD', ok: d.kd < rules.kd,
+        txt: d.kd + '（门槛 < ' + rules.kd + (d.kd < rules.kd ? '' : '，超出 ' + (d.kd / rules.kd).toFixed(1) + ' 倍') + '）' },
+      { key:'ref', label:'所需外链网站数', ok: d.ref < rules.ref,
+        txt: '约 ' + fmt(d.ref) + ' 个（门槛 < ' + rules.ref + (d.ref < rules.ref ? '' : '，超出 ' + (d.ref / rules.ref).toFixed(1) + ' 倍') + '）' },
+      { key:'trend', label:'趋势形态', ok: !(rules.trendHard && trendBad), enforced: rules.trendHard,
+        txt: TREND[d.trend] + (trendBad ? (rules.trendHard ? '（硬指标拦截）' : '（警告，未拦截）') : '') }
+    ];
+
+    // 风险项
+    const risks = [];
+    if(d.brand && !rules.brandVeto)     risks.push('品牌词：官方站稳居第一');
+    if(trendBad && !rules.trendHard)    risks.push(TREND[d.trend] + '：窗口可能已关闭');
+    if(d.sitelinks)                     risks.push('前排有 Sitelinks：用户想找的是那个站');
+    if(d.serp === 'dedicated')          risks.push('前 10 全是专站首页');
+    if(d.trend === 'seasonal')          risks.push('季节词：只有几个月有量');
+    if(kgrHigh)                         risks.push('KGR ' + kgr.toFixed(3) + ' 高于门槛 ' + rules.kgr);
+    if(!d.domainOk)                     risks.push('.com 已被注册');
+
+    const hardFails = hard.filter(h => !h.ok);
+    let cls, label, reason;
+    if(d.brand && rules.brandVeto){
+      cls='reject'; label='淘汰';
+      reason='品牌词 —— 一票否决。用户搜的是某个具体产品，官方站永远第一。';
+    } else if(hardFails.length){
+      cls='reject'; label='淘汰';
+      reason = hardFails.map(h => h.label + ' ' + h.txt).join('；') + '。硬指标不过，做进去也拿不到位置。';
+    } else if(rules.riskGate > 0 && risks.length >= rules.riskGate){
+      cls='review'; label='待定';
+      reason = '硬指标全过，但 ' + risks.length + ' 项风险（≥' + rules.riskGate + ' 判待定）：' + risks.join('；') + '。';
+    } else if(risks.length){
+      cls='pass'; label='通过（带 ' + risks.length + ' 项风险）';
+      reason = '硬指标全过。风险：' + risks.join('；') + '。';
+    } else {
+      cls='pass'; label='通过';
+      reason = '硬指标全过，未发现风险项。这种词不多，看到别犹豫。';
+    }
+
+    // 数据自洽提示（不参与判定）
+    const notes = [];
+    if(kgr !== null && kgr > 5) notes.push('KGR 异常高（' + kgr.toFixed(1) + '），检查 intitle 与月搜索量是否填反了。');
+    if(d.kd <= 5 && d.serp === 'dedicated') notes.push('KD 很低但前排全是专站，两项数据可能有一项填错。');
+    if(d.ref === 0 && d.kd > 20) notes.push('所需外链站为 0 但 KD 偏高，两者通常不会同时出现。');
+    if(d.volume !== null && d.intitle !== null && d.volume > 0 && d.intitle > d.volume * 50) notes.push('intitle 结果数远大于月搜索量，确认引号是否漏了。');
+
+    return {hard, risks, kgr, kgrHigh, cls, label, reason, notes, hardFails};
+  }
+
+  /* ============ 渲染 ============ */
+  const ICON = {
+    pass:'<svg class="vicon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8.2" stroke="#1a7a51" stroke-width="1.5"/><path d="M6.4 10.3l2.4 2.4 4.8-5" stroke="#1a7a51" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    reject:'<svg class="vicon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8.2" stroke="#a9382d" stroke-width="1.5"/><path d="M7 7l6 6M13 7l-6 6" stroke="#a9382d" stroke-width="1.7" stroke-linecap="round"/></svg>',
+    review:'<svg class="vicon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8.2" stroke="#96690f" stroke-width="1.5"/><path d="M10 5.8v5" stroke="#96690f" stroke-width="1.7" stroke-linecap="round"/><circle cx="10" cy="13.9" r="1" fill="#96690f"/></svg>'
+  };
+
+  function renderChips(d){
+    return ['strict','medium','loose'].map(k => {
+      const p = PRESETS[k];
+      const rr = evaluate(d, {kd:p.kd, ref:p.ref, kgr:p.kgr, trendHard:p.trendHard, brandVeto:p.brandVeto, riskGate:p.riskGate});
+      const short = rr.cls === 'reject' ? '淘汰' : rr.cls === 'review' ? '待定' : '通过';
+      return '<div class="chip ' + rr.cls + (level===k?' cur':'') + '"><span class="l">' + p.name + ' 档</span><span class="v">' + short + '</span></div>';
+    }).join('');
+  }
+
+  function renderRows(r){
+    const d = readData();
+    const rows = [];
+    r.hard.forEach(h => {
+      rows.push(row(h.label, h.txt, h.ok ? 'ok' : 'bad'));
+    });
+    rows.push(row('intitle 结果数', d.intitle === null ? '未填' : fmt(d.intitle), d.intitle === null ? 'muted' : 'muted'));
+    rows.push(row('KGR',
+      r.kgr === null ? '—' : r.kgr.toFixed(3),
+      r.kgr === null ? 'muted' : (r.kgrHigh ? 'bad' : 'ok'),
+      r.kgr === null ? '需同时填月搜索量' : (r.kgrHigh ? '高于门槛 ' + readRules().kgr : '低于门槛 ' + readRules().kgr)));
+    rows.push(row('前 10 构成',
+      d.serp ? SERP[d.serp] : '未选',
+      d.serp === 'inner' ? 'ok' : (d.serp === 'dedicated' ? 'bad' : (d.serp ? 'warn' : 'muted')),
+      d.serp === 'inner' ? '内页为主 = 没有专站 = 机会' : ''));
+    rows.push(row('品牌词 / Sitelinks',
+      (d.brand?'是':'否') + ' / ' + (d.sitelinks?'有':'无'),
+      (d.brand && readRules().brandVeto) || d.sitelinks ? 'bad' : 'ok'));
+    rows.push(row('风险项合计', r.risks.length + ' 项', r.risks.length ? 'warn' : 'ok'));
+    $('rows').innerHTML = rows.join('');
+  }
+  function row(k, v, status, note){
+    return '<tr><td class="k">' + k + '</td><td class="v ' + status + '">' + v +
+      (note ? '<span class="note">' + note + '</span>' : '') + '</td></tr>';
+  }
+
+  function buildMarkdown(d, r, rules){
+    const lvName = level === 'custom' ? '自定义' : PRESETS[level].name;
+    const sig = '档位' + lvName + ' KD<' + rules.kd + ' 外链<' + rules.ref +
+      ' 趋势硬' + (rules.trendHard ? '✓' : '✗') + ' 品牌' + (rules.brandVeto ? '✓' : '✗') +
+      ' 风险≥' + (rules.riskGate || '关');
+    const concl = (r.cls === 'reject' ? '❌ 砍' : r.cls === 'pass' ? '✅ 可做' : '⚠️ 待定') + '：' + r.reason;
+    return '| 词 | ' + d.kw + ' | Trends | ' + TREND[d.trend] + ' | — | ' +
+      (d.volume ? fmt(d.volume) + '/月' : '未估') + ' | ' + TREND[d.trend] + ' | ' +
+      (d.intitle === null ? '未查' : fmt(d.intitle)) + ' | ' +
+      (r.kgr === null ? '—' : r.kgr.toFixed(3)) + ' | ' +
+      d.kd + (d.kd < rules.kd ? '' : ' (超)') + ' | ' +
+      fmt(d.ref) + (d.ref < rules.ref ? '' : ' (超)') + ' | ' +
+      (d.serp ? SERP[d.serp] + (d.sitelinks ? '，有 Sitelinks' : '') : '未查') + ' | ' +
+      (d.domainOk ? '可' : '不可') + ' | ' + concl + ' 〔' + sig + '〕 |';
+  }
+
+  function judge(explicit){
+    const v = validate(true);
+    if(!v.ok){
+      if(!explicit) return;                      // 自动重算时缺项不打断，保留上一次结论
+      const box = $('verdict');
+      box.className = 'verdict warn2';
+      box.innerHTML = '<div class="vtop"><span class="vbadge" id="vBadge">校验未通过</span></div>' +
+        '<div class="vreason" id="vReason">有 ' + v.names.length + ' 项需要修正：' + v.names.join('、') + '。已在左侧标红。</div>';
+      $('vHint').style.display = 'none';
+      $('chips').innerHTML = ''; $('rows').innerHTML = ''; $('mdWrap').style.display = 'none';
+      $('verdictAside').textContent = '';
+      toast('先修正标红的字段');
+      return;
+    }
+    const d = readData();
+    const rules = readRules();
+    const r = evaluate(d, rules);
+
+    const vBox = $('verdict');
+    vBox.className = 'verdict ' + r.cls;
+    vBox.innerHTML = '<div class="vtop">' + ICON[r.cls] + '<span class="vbadge" id="vBadge">' + r.label +
+      '</span><span class="vkw" id="vKw">· ' + escapeHtml(d.kw) + '</span></div>' +
+      '<div class="vreason" id="vReason">' + r.reason + '</div>';
+
+    // 跨档提示
+    const others = ['strict','medium','loose'].filter(k => k !== level);
+    let hint = '';
+    for(const k of others){
+      const p = PRESETS[k];
+      const rr = evaluate(d, {kd:p.kd, ref:p.ref, kgr:p.kgr, trendHard:p.trendHard, brandVeto:p.brandVeto, riskGate:p.riskGate});
+      if(r.cls === 'reject' && rr.cls !== 'reject'){
+        hint = '同一份数据在 <b>' + p.name + ' 档</b>下为「' + (rr.cls === 'pass' ? '通过' : '待定') +
+          '」。差距是 ' + gapText(r, p) + '——要不要放宽，取决于你能搞到多少外链。';
+        break;
+      }
+    }
+    if(!hint && r.notes.length) hint = r.notes.join('<br>');
+    if(!hint && r.cls === 'review') hint = '待定不是结论，是提醒：把风险逐条想清楚再决定，别靠感觉。';
+    $('vHint').style.display = hint ? 'block' : 'none';
+    $('vHint').innerHTML = hint;
+
+    $('chips').innerHTML = renderChips(d);
+    renderRows(r);
+
+    const md = buildMarkdown(d, r, rules);
+    $('md').value = md;
+    $('mdWrap').style.display = 'block';
+    $('verdictAside').textContent = (level === 'custom' ? '自定义规则' : PRESETS[level].name + '档');
+
+    // 记录（只有用户主动判定时才入历史，切档位/自动重算不污染）
+    if(explicit){
+      addHistory({kw: d.kw, data: d, rules: rules, cls: r.cls, label: r.label, level: level, md: md});
+    }
+    saveDraft();
+  }
+
+  function gapText(r, p){
+    const d = readData();
+    const parts = [];
+    if(d.kd >= p.kd) parts.push('KD ' + d.kd + ' vs <' + p.kd);
+    if(d.ref >= p.ref) parts.push('外链 ' + d.ref + ' vs <' + p.ref);
+    return parts.length ? parts.join('、') : '风险项数量';
+  }
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  /* ============ 记录 ============ */
+  function addHistory(item){
+    const i = history.findIndex(h => h.kw.toLowerCase() === item.kw.toLowerCase() && h.level === item.level);
+    if(i >= 0) history.splice(i, 1);
+    history.unshift(item);
+    if(history.length > 30) history.pop();
+    renderHistory();
+  }
+  function renderHistory(){
+    const ul = $('hist');
+    $('histCount').textContent = history.length + ' 条';
+    $('btnExport').disabled = history.length === 0;
+    $('histTip').style.display = history.length ? 'none' : 'block';
+    ul.innerHTML = history.map((h, i) =>
+      '<li data-i="' + i + '" title="点击回填这份数据">' +
+        '<span class="hk">' + escapeHtml(h.kw) + '</span>' +
+        '<span class="hv ' + h.cls + '">' + h.label + '</span>' +
+      '</li>').join('');
+  }
+  $('hist').addEventListener('click', e => {
+    const li = e.target.closest('li'); if(!li) return;
+    const h = history[+li.dataset.i]; if(!h) return;
+    const d = h.data;
+    F.kw.value = d.kw; F.intitle.value = d.intitle ?? ''; F.volume.value = d.volume ?? '';
+    F.kd.value = d.kd; F.ref.value = d.ref; F.trend.value = d.trend; F.serp.value = d.serp;
+    F.brand.checked = d.brand; F.sitelinks.checked = d.sitelinks; F.domain.checked = d.domainOk;
+    F.tKd.value = h.rules.kd; F.tRef.value = h.rules.ref; F.tKgr.value = h.rules.kgr;
+    F.sBrand.checked = h.rules.brandVeto; F.sTrend.checked = h.rules.trendHard;
+    F.sRisk.checked = h.rules.riskGate > 0;
+    if(h.rules.riskGate > 0) F.tRisk.value = h.rules.riskGate;
+    level = h.level;
+    syncLevelUI();
+    judged = true;
+    judge(true);
+    toast('已回填：' + h.kw);
+  });
+
+  $('btnExport').addEventListener('click', () => {
+    if(!history.length) return;
+    const head = '| # | 关键词 | 结论 | 档位 | 规则 |\n| --- | --- | --- | --- | --- |\n';
+    const body = history.map((h, i) => '| ' + (i+1) + ' | ' + h.kw + ' | ' + h.label + ' | ' +
+      (h.level === 'custom' ? '自定义' : PRESETS[h.level].name) + ' | KD<' + h.rules.kd +
+      ' 外链<' + h.rules.ref + ' |').join('\n');
+    const blob = new Blob([head + body + '\n\n---\n\n' + history.map(h => h.md).join('\n')], {type:'text/markdown'});
+    const a = document.createElement('a');
+    const d = new Date(); const pad = n => String(n).padStart(2,'0');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'keywords-' + d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) + '.md';
+    a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 3000);
+    toast('已导出 ' + history.length + ' 条记录');
+  });
+
+  /* ============ 档位 ============ */
+  function applyLevel(lv, silent){
+    const p = PRESETS[lv]; if(!p) return;
+    level = lv;
+    F.tKd.value = p.kd; F.tRef.value = p.ref; F.tKgr.value = p.kgr;
+    F.sBrand.checked = p.brandVeto; F.sTrend.checked = p.trendHard; F.sRisk.checked = p.riskGate > 0;
+    if(p.riskGate > 0) F.tRisk.value = p.riskGate;
+    syncLevelUI();
+    if(!silent) judge();
+  }
+  function syncLevelUI(){
+    document.querySelectorAll('#seg button').forEach(b => b.classList.toggle('on', b.dataset.lv === level));
+    const box = $('lvlDesc');
+    if(level === 'custom'){
+      box.innerHTML = '<b>自定义</b>：你手动改过门槛或开关，当前组合不对应任何预设档。点上方任一档位会覆盖这些值。';
+      $('actLv').textContent = '当前：自定义';
+    } else {
+      box.innerHTML = PRESETS[level].desc;
+      $('actLv').textContent = '当前：' + PRESETS[level].name + '档';
+    }
+  }
+  function markCustom(){ if(level !== 'custom'){ level = 'custom'; syncLevelUI(); } }
+  document.querySelectorAll('#seg button').forEach(b => {
+    b.addEventListener('click', () => { applyLevel(b.dataset.lv); toast('已切换到「' + PRESETS[b.dataset.lv].name + '」档'); });
+  });
+
+  /* ============ 事件 ============ */
+  Object.values(F).forEach(el => {
+    if(!el || !el.id) return;
+    el.addEventListener('input', () => {
+      if($(el.id + '-err')) setErr(el.id, '');
+      if(el.classList.contains('auto') && NUM_FIELDS.indexOf(el.id) >= 0) el.classList.remove('auto');
+      scheduleDraft();
+      autoJudge();
+    });
+    el.addEventListener('change', () => { scheduleDraft(); autoJudge(); });
+  });
+
+  let judged = false;
+  function autoJudge(){ if(judged) judge(false); }
+
+  ['tKd','tRef','tKgr','sBrand','sTrend','sRisk','tRisk'].forEach(id => {
+    const el = $(id);
+    el.addEventListener('change', () => { markCustom(); scheduleDraft(); autoJudge(); });
+    el.addEventListener('input', () => { markCustom(); scheduleDraft(); autoJudge(); });
+  });
+
+  $('btnJudge').addEventListener('click', () => { judged = true; judge(true); });
+  document.addEventListener('keydown', e => {
+    if((e.metaKey || e.ctrlKey) && e.key === 'Enter'){ e.preventDefault(); judged = true; judge(true); }
+  });
+
+  /* 清空：二次确认 */
+  let clearArm = 0;
+  $('btnClear').addEventListener('click', () => {
+    const btn = $('btnClear');
+    if(!clearArm){
+      clearArm = 1; btn.textContent = '确认清空？'; btn.classList.add('primary');
+      setTimeout(() => { clearArm = 0; btn.textContent = '清空'; btn.classList.remove('primary'); }, 2600);
+      return;
+    }
+    clearArm = 0; btn.textContent = '清空'; btn.classList.remove('primary');
+    ['kw','intitle','volume','kd','refdomains'].forEach(k => { F[k].value = ''; F[k].classList.remove('auto','invalid'); });
+    F.trend.value = ''; F.serp.value = '';
+    F.brand.checked = false; F.sitelinks.checked = false; F.domain.checked = true;
+    clearErrs();
+    $('verdict').className = 'verdict empty';
+    $('verdict').innerHTML = '<div class="vtop"><span class="vbadge" id="vBadge">待输入</span></div>' +
+      '<div class="vreason" id="vReason">填好必需项后点「判定」，或按 <kbd>⌘↵</kbd>。</div>';
+    $('vHint').style.display = 'none'; $('chips').innerHTML = ''; $('rows').innerHTML = '';
+    $('mdWrap').style.display = 'none'; $('verdictAside').textContent = '';
+    $('ocrStatus').textContent = ''; $('ocrStatus').className = '';
+    const img = $('drop').querySelector('img'); if(img){ URL.revokeObjectURL(img.src); img.remove(); }
+    judged = false; localStorage.removeItem(DRAFT_KEY);
+    toast('已清空输入（记录保留）');
+  });
+
+  /* 示例 */
+  $('btnDemo').addEventListener('click', () => {
+    applyLevel('strict', true);
+    F.kw.value = 'random country generator';
+    F.intitle.value = 1400; F.volume.value = ''; F.kd.value = 54; F.ref.value = 99;
+    F.trend.value = 'declining'; F.serp.value = 'dedicated';
+    F.brand.checked = false; F.sitelinks.checked = true; F.domain.checked = true;
+    judged = true; clearErrs(); judge(true);
+    toast('已载入真实案例：三档都过不了');
+  });
+
+  /* 复制 */
+  $('btnCopy').addEventListener('click', async () => {
+    const text = $('md').value;
+    try{ await navigator.clipboard.writeText(text); }
+    catch(_){ $('md').select(); document.execCommand('copy'); }
+    toast('已复制，可直接粘进表格');
+  });
+
+  /* ============ 草稿保存 ============ */
+  let draftTimer = null;
+  function scheduleDraft(){ clearTimeout(draftTimer); draftTimer = setTimeout(saveDraft, 400); }
+  function saveDraft(){
+    try{
+      const d = readData();
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({d, rules: readRules(), level}));
+    }catch(_){}
+  }
+  function restoreDraft(){
+    let raw = null;
+    try{ raw = localStorage.getItem(DRAFT_KEY); }catch(_){}
+    if(!raw) return false;
+    try{
+      const s = JSON.parse(raw); const d = s.d || {};
+      F.kw.value = d.kw || ''; F.intitle.value = d.intitle ?? ''; F.volume.value = d.volume ?? '';
+      F.kd.value = d.kd ?? ''; F.ref.value = d.ref ?? '';
+      F.trend.value = d.trend || ''; F.serp.value = d.serp || '';
+      F.brand.checked = !!d.brand; F.sitelinks.checked = !!d.sitelinks; F.domain.checked = d.domainOk !== false;
+      if(s.rules){
+        F.tKd.value = s.rules.kd ?? 10; F.tRef.value = s.rules.ref ?? 10; F.tKgr.value = s.rules.kgr ?? 0.25;
+        F.sBrand.checked = !!s.rules.brandVeto; F.sTrend.checked = !!s.rules.trendHard;
+        F.sRisk.checked = s.rules.riskGate > 0;
+        if(s.rules.riskGate > 0) F.tRisk.value = s.rules.riskGate;
+      }
+      level = s.level || 'strict';
+      return !!(d.kw || d.kd !== null);
+    }catch(_){ return false; }
+  }
+
+  /* ============ 截图识别 ============ */
+  const drop = $('drop'), ocrStatus = $('ocrStatus');
+  let ocrWorker = null, ocrBusy = false;
+
+  function setStatus(msg, kind){ ocrStatus.textContent = msg || ''; ocrStatus.className = kind || ''; }
+  function loadScript(src){
+    return new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = src; s.onload = () => res(); s.onerror = () => rej(new Error('load failed'));
+      document.head.appendChild(s);
+    });
+  }
+  async function ensureOCR(){
+    if(ocrWorker) return ocrWorker;
+    setStatus('正在加载识别引擎（首次约几 MB，需联网）…');
+    if(!window.Tesseract) await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js');
+    ocrWorker = await window.Tesseract.createWorker('eng');
+    return ocrWorker;
+  }
+  function parseInt10(s){ return parseInt(String(s).replace(/[^\d]/g,''), 10); }
+
+  function parseText(t){
+    const out = {};
+    const flat = t.replace(/\s+/g, ' ');
+    // Ahrefs：所需外链网站数
+    let m = flat.match(/~?\s*(\d{1,5})\s*websites/i);
+    if(m) out.ref = parseInt10(m[1]);
+    // 谷歌：结果数
+    m = flat.match(/About\s+([\d,]{1,12})\s+results/i) || flat.match(/找到约\s*([\d,]{1,12})\s*条结果/);
+    if(m) out.intitle = parseInt10(m[1]);
+    // Ahrefs：KD（先看 Difficulty 附近，再看 "54 Hard" 组合）
+    m = flat.match(/Difficulty(?!\s*for)[^0-9]{0,24}(\d{1,3})/i);
+    if(m && +m[1] <= 100) out.kd = parseInt10(m[1]);
+    if(out.kd === undefined){
+      m = flat.match(/(\d{1,3})\s*(?:-\s*)?(Hard|Easy|Medium)\b/i);
+      if(m && +m[1] <= 100) out.kd = parseInt10(m[1]);
+    }
+    // Trends
+    m = flat.match(/(上涨|上升|增长|下降|下滑)\s*(\d+)\s*%/);
+    if(m) out.trend = /下降|下滑/.test(m[1]) ? 'declining' : 'rising';
+    return out;
+  }
+
+  async function handleFile(file){
+    if(!file || !/^image\//.test(file.type)){ setStatus('请选择图片文件。','err'); return; }
+    if(ocrBusy){ setStatus('正在识别上一张，稍等…'); return; }
+    ocrBusy = true;
+    const url = URL.createObjectURL(file);
+    const prev = drop.querySelector('img'); if(prev){ URL.revokeObjectURL(prev.src); prev.remove(); }
+    const img = document.createElement('img'); img.src = url; img.alt = '截图预览';
+    drop.appendChild(img);
+    try{
+      const w = await ensureOCR();
+      setStatus('识别中…');
+      const { data } = await w.recognize(file);
+      const r = parseText(data.text || '');
+      const filled = [];
+      if(r.kd !== undefined && r.kd <= 100){ F.kd.value = r.kd; F.kd.classList.add('auto'); filled.push('KD ' + r.kd); }
+      if(r.ref !== undefined){ F.ref.value = r.ref; F.ref.classList.add('auto'); filled.push('外链站 ' + r.ref); }
+      if(r.intitle !== undefined){ F.intitle.value = r.intitle; F.intitle.classList.add('auto'); filled.push('intitle ' + fmt(r.intitle)); }
+      if(r.trend !== undefined){ F.trend.value = r.trend; F.trend.classList.add('auto'); filled.push('趋势 ' + TREND[r.trend]); }
+
+      if(filled.length){
+        setStatus('识别到 ' + filled.length + ' 项：' + filled.join('、') + '（黄底字段请核对，改一下黄底就消失）', 'ok');
+        judged = true; clearErrs(); judge(true);
+      } else {
+        setStatus('没识别出可用数字。截图请对准数字区域，或直接手动填。', 'err');
+      }
+    }catch(_){
+      setStatus('识别引擎不可用（可能被网络拦截）。手动填写即可，不影响判定。', 'err');
+    }finally{ ocrBusy = false; }
+  }
+
+  drop.addEventListener('click', () => {
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = 'image/*';
+    inp.addEventListener('change', () => { if(inp.files && inp.files[0]) handleFile(inp.files[0]); });
+    inp.click();
+  });
+  drop.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); drop.click(); } });
+  drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+  drop.addEventListener('drop', e => {
+    e.preventDefault(); drop.classList.remove('over');
+    const f = e.dataTransfer.files && e.dataTransfer.files[0];
+    if(f) handleFile(f);
+  });
+  document.addEventListener('paste', e => {
+    const tag = (e.target && e.target.tagName) || '';
+    if(tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;   // 输入框内粘贴文字不触发
+    const items = (e.clipboardData && e.clipboardData.items) || [];
+    for(const it of items){
+      if(it.type && it.type.indexOf('image/') === 0){
+        const f = it.getAsFile();
+        if(f){ handleFile(f); break; }
+      }
+    }
+  });
+
+  /* ============ 初始化 ============ */
+  const restored = restoreDraft();
+  syncLevelUI();
+  if(restored){
+    const v = validate(true);
+    if(v.ok){ judged = true; judge(false); toast('已恢复上次的输入并重算'); }
+    else { judged = false; toast('已恢复上次的输入'); }
+  }
+  renderHistory();
+})();
+</script>
+</body>
+</html>
