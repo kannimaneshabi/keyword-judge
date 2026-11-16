@@ -99,6 +99,8 @@
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:13px}
   @media (max-width:600px){ .grid2{grid-template-columns:1fr} }
   .span2{grid-column:1/-1}
+  .sep{display:flex;align-items:center;gap:10px;color:var(--ink4);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;margin:6px 0 0}
+  .sep::before,.sep::after{content:"";flex:1;height:1px;background:var(--line2)}
 
   /* tooltip */
   .q{
@@ -272,22 +274,6 @@
           </div>
 
           <div class="field">
-            <label class="fl" for="intitle">intitle 结果数
-              <button class="q" type="button" aria-label="intitle 取数说明">?<span class="bub"><b>怎么取：</b>谷歌搜 <code>intitle:"你的词"</code>（带引号）→ 点搜索框下方「工具」→ 看右下角「找到约 X 条结果」。<br>不带引号数字会偏大，不能用。</span></button>
-            </label>
-            <input type="number" id="intitle" min="1" step="1" placeholder="1400" inputmode="numeric">
-            <div class="err" id="intitle-err"></div>
-          </div>
-
-          <div class="field">
-            <label class="fl" for="volume">月搜索量 <span class="opt">可选</span>
-              <button class="q" type="button" aria-label="月搜索量说明">?<span class="bub"><b>可留空：</b>没有 Ads 账号时，用 Trends 参照词估（候选曲线是参照词的几倍 × 参照日量 × 30）。<br>不填则跳过 KGR，其余判定照常。</span></button>
-            </label>
-            <input type="number" id="volume" min="1" step="1" placeholder="20000" inputmode="numeric">
-            <div class="err" id="volume-err"></div>
-          </div>
-
-          <div class="field">
             <label class="fl" for="kd">Ahrefs KD <span class="req">*</span>
               <button class="q" type="button" aria-label="KD 取数说明">?<span class="bub"><b>怎么取：</b>打开 <code>ahrefs.com/keyword-difficulty</code> 输入词，看圆环里的数字（0—100）。<br>别和 Semrush 的 KD 百分比比大小，两家算法不同。</span></button>
             </label>
@@ -318,8 +304,8 @@
             <div class="err" id="trend-err"></div>
           </div>
 
-          <div class="field span2">
-            <label class="fl" for="serp">前 10 名构成
+          <div class="field">
+            <label class="fl" for="serp">前 10 名构成 <span class="req">*</span>
               <button class="q" type="button" aria-label="SERP 判定说明">?<span class="bub"><b>怎么判：</b>谷歌搜这个词，看前 10 是「专做这个词的站的首页」还是「大站的一个内页」。<br>内页多 = 没人专门做 = 你的机会。</span></button>
             </label>
             <select id="serp">
@@ -331,8 +317,26 @@
             <div class="err" id="serp-err"></div>
           </div>
 
+          <div class="sep span2"><span>以下选填 · 影响 KGR 与风险提示</span></div>
+
+          <div class="field">
+            <label class="fl" for="intitle">intitle 结果数 <span class="opt">可选</span>
+              <button class="q" type="button" aria-label="intitle 取数说明">?<span class="bub"><b>怎么取：</b>谷歌搜 <code>intitle:"你的词"</code>（带引号）→ 点搜索框下方「工具」→ 看右下角「找到约 X 条结果」。<br>不带引号数字会偏大，不能用。仅用于算 KGR。</span></button>
+            </label>
+            <input type="number" id="intitle" min="1" step="1" placeholder="1400" inputmode="numeric">
+            <div class="err" id="intitle-err"></div>
+          </div>
+
+          <div class="field">
+            <label class="fl" for="volume">月搜索量 <span class="opt">可选</span>
+              <button class="q" type="button" aria-label="月搜索量说明">?<span class="bub"><b>可留空：</b>没有 Ads 账号时，用 Trends 参照词估（候选曲线是参照词的几倍 × 参照日量 × 30）。<br>不填则跳过 KGR，其余判定照常。</span></button>
+            </label>
+            <input type="number" id="volume" min="1" step="1" placeholder="20000" inputmode="numeric">
+            <div class="err" id="volume-err"></div>
+          </div>
+
           <div class="field span2">
-            <label class="fl">附加标记</label>
+            <label class="fl">附加标记 <span class="opt">可选</span></label>
             <label class="chk"><input type="checkbox" id="brand"> 品牌词 / 官方产品名</label>
             <label class="chk"><input type="checkbox" id="sitelinks"> 前 10 有 Sitelinks</label>
             <label class="chk"><input type="checkbox" id="domain" checked> .com 可注册</label>
