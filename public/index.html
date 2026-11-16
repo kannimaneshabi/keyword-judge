@@ -156,7 +156,8 @@
   .q .bub code{background:rgba(255,255,255,.12);padding:0 3px;border-radius:3px;font-size:11px}
   .q:hover .bub,.q:focus-visible .bub{display:block}
 
-  .chk{display:inline-flex;align-items:center;gap:7px;font-size:13.5px;color:var(--ink2);cursor:pointer;margin-right:16px}
+  .chk{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;color:var(--ink2);cursor:pointer;margin-right:16px}
+  .chk .q{flex:0 0 auto;margin-left:-1px}
   .chk input{width:15px;height:15px;accent-color:var(--accent);cursor:pointer;margin:0}
 
   /* ---------- ocr ---------- */
@@ -482,9 +483,15 @@ reddit.com/r/capcut"></textarea>
 
           <div class="field span2">
             <label class="fl">附加标记 <span class="opt">可选</span></label>
-            <label class="chk"><input type="checkbox" id="brand"> 品牌词 / 官方产品名</label>
-            <label class="chk"><input type="checkbox" id="sitelinks"> 前 10 有 Sitelinks</label>
-            <label class="chk"><input type="checkbox" id="domain" checked> .com 可注册</label>
+            <label class="chk"><input type="checkbox" id="brand"> <span>品牌词 / 官方产品名</span>
+              <button class="q" type="button" aria-label="品牌词判断说明">?<span class="bub"><b>判断方式：</b>搜索第 1 名是否就是这个词所指的产品官网（如 canva → canva.com、capcut → capcut.com）。<br>勾选后默认一票否决：用户想找的就是那个产品，新站抢不到首位。<br>只在关键词<b>本身</b>是产品名或公司名时勾；关键词里顺带含品牌名（如 preset editor capcut）不算。</span></button>
+            </label>
+            <label class="chk"><input type="checkbox" id="sitelinks"> <span>前 10 有 Sitelinks</span>
+              <button class="q" type="button" aria-label="Sitelinks 判断说明">?<span class="bub"><b>判断方式：</b>某条结果的标题下方挂着一排缩进的站内链接（通常 2—6 条，如「价格 / 下载 / 帮助」）。<br>出现即勾选：谷歌据此认定「用户搜这个词就是想找这个站」。<br>移动端不显示 Sitelinks，需看桌面结果。</span></button>
+            </label>
+            <label class="chk"><input type="checkbox" id="domain" checked> <span>.com 可注册</span>
+              <button class="q" type="button" aria-label="域名可注册判断说明">?<span class="bub"><b>判断方式：</b>在域名注册商搜你打算用的 .com（如 preseteditor.com），显示可购买则勾选。<br>已被注册就取消勾选：不是硬门槛，但会额外计入一项风险。<br>默认勾选表示「尚未查询」的假设，查过之后再改。</span></button>
+            </label>
           </div>
 
           <input type="file" id="ocrFile" accept="image/*" hidden>
@@ -1968,6 +1975,12 @@ reddit.com/r/capcut"></textarea>
   });
   $('btnSerpFill').addEventListener('click', () => {
     serpUrlsEl.value = 'https://presetseditor.com/\nhttps://capcut.com/\nhttps://www.reddit.com/r/capcut/';
+  });
+
+  // 附加标记里的「?」嵌在 label 内，需阻止其触发复选框
+  document.querySelectorAll('.chk .q').forEach(btn => {
+    btn.addEventListener('mousedown', e => { e.preventDefault(); e.stopPropagation(); });
+    btn.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); });
   });
 
   /* ============ 初始化 ============ */
