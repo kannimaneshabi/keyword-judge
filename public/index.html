@@ -284,10 +284,8 @@
 
           <div class="field">
             <label class="fl" for="kd">Ahrefs KD <span class="req">*</span>
-              <button class="q" type="button" aria-label="KD 取数说明">?<span class="bub"><b>取值方式：</b>打开 <code>ahrefs.com/keyword-difficulty</code> 输入关键词，读取环形图显示的数值（0—100）。<br>该指标与 Semrush 的 KD 百分比算法不同，两者不宜直接比较。</span></button>
-              <button class="lk" type="button" data-tool="ahrefs" title="在 Ahrefs 查询该关键词的 KD 与外链需求">查 Ahrefs<svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 8L8 2M8 2H3.4M8 2v4.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-            </label>
-            <input type="number" id="kd"</button>
+              <button class="q" type="button" aria-label="KD 取值说明">?<span class="bub"><b>取值方式：</b>打开 <code>ahrefs.com/keyword-difficulty</code> 输入关键词，读取环形图显示的数值（0—100）。<br>该指标与 Semrush 的 KD 百分比算法不同，两者不宜直接比较。</span></button>
+              <button class="lk" type="button" data-tool="ahrefs">查 Ahrefs<svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 8L8 2M8 2H3.4M8 2v4.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
             </label>
             <input type="number" id="kd" min="0" max="100" step="1" placeholder="54" inputmode="numeric">
             <div class="err" id="kd-err"></div>
@@ -295,10 +293,8 @@
 
           <div class="field">
             <label class="fl" for="refdomains">所需外链网站数 <span class="req">*</span>
-              <button class="q" type="button" aria-label="外链数取数说明">?<span class="bub"><b>取值方式：</b>在同一 Ahrefs 页面读取 <code>…need followed backlinks from ~N websites</code>，取其中的 N。<br>相比 KD，该数值更直接地反映进入前 10 所需的外链规模。</span></button>
-              <button class="lk" type="button" data-tool="ahrefs" title="在 Ahrefs 查询该关键词的 KD 与外链需求">查 Ahrefs<svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 8L8 2M8 2H3.4M8 2v4.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-            </label>
-            <input type="number" id="refdomains"</button>
+              <button class="q" type="button" aria-label="外链数取值说明">?<span class="bub"><b>取值方式：</b>在同一 Ahrefs 页面读取 <code>…need followed backlinks from ~N websites</code>，取其中的 N。<br>相比 KD，该数值更直接地反映进入前 10 所需的外链规模。</span></button>
+              <button class="lk" type="button" data-tool="ahrefs">查 Ahrefs<svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 8L8 2M8 2H3.4M8 2v4.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
             </label>
             <input type="number" id="refdomains" min="0" step="1" placeholder="99" inputmode="numeric">
             <div class="err" id="refdomains-err"></div>
@@ -306,10 +302,8 @@
 
           <div class="field">
             <label class="fl" for="trend">趋势形态 <span class="req">*</span>
-              <button class="q" type="button" aria-label="趋势判定说明">?<span class="bub"><b>判断方式：</b>在 Trends 中分别查看 12 个月与 5 年区间。<br>仅个别月份有量 → 季节<br>短期冲高后归零 → 尖刺<br>整体持续走低 → 下降<br>全年稳定有量 → 平稳</span></button>
-              <button class="lk" type="button" data-tool="trends" title="在 Google Trends 查看该关键词的 12 个月走势">看 Trends<svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 8L8 2M8 2H3.4M8 2v4.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-            </label>
-            <select id="trend"</button>
+              <button class="q" type="button" aria-label="趋势判断说明">?<span class="bub"><b>判断方式：</b>在 Trends 中分别查看 12 个月与 5 年区间。<br>仅个别月份有量 → 季节<br>短期冲高后归零 → 尖刺<br>整体持续走低 → 下降<br>全年稳定有量 → 平稳</span></button>
+              <button class="lk" type="button" data-tool="trends">看 Trends<svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 8L8 2M8 2H3.4M8 2v4.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
             </label>
             <select id="trend">
               <option value="">请选择…</option>
@@ -324,10 +318,8 @@
 
           <div class="field">
             <label class="fl" for="serp">前 10 名构成 <span class="req">*</span>
-              <button class="q" type="button" aria-label="SERP 判定说明">?<span class="bub"><b>判断方式：</b>在 Google 搜索该关键词，观察前 10 名是「专注该词的独立站点首页」还是「大型站点的一个内页」。<br>以内页为主，说明尚无专门站点，属于可用空间。</span></button>
-              <button class="lk" type="button" data-tool="google" title="在 Google 搜索该关键词，查看前 10 名构成">看搜索结果<svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 8L8 2M8 2H3.4M8 2v4.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-            </label>
-            <select id="serp"</button>
+              <button class="q" type="button" aria-label="搜索结果判断说明">?<span class="bub"><b>判断方式：</b>在 Google 搜索该关键词，观察前 10 名是「专注该词的独立站点首页」还是「大型站点的一个内页」。<br>以内页为主，说明尚无专门站点，属于可用空间。</span></button>
+              <button class="lk" type="button" data-tool="google">看搜索结果<svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 8L8 2M8 2H3.4M8 2v4.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
             </label>
             <select id="serp">
               <option value="">请选择…</option>
@@ -342,10 +334,8 @@
 
           <div class="field">
             <label class="fl" for="intitle">intitle 结果数 <span class="opt">可选</span>
-              <button class="q" type="button" aria-label="intitle 取数说明">?<span class="bub"><b>取值方式：</b>在 Google 搜索 <code>intitle:"关键词"</code>（须带引号），点击搜索框下方「工具」，读取「找到约 X 条结果」。<br>未加引号时结果数会显著偏大，不可用于计算；该数值仅用于计算 KGR。</span></button>
-              <button class="lk" type="button" data-tool="google-intitle" title="在 Google 执行 intitle 查询，直接得到结果数">搜 intitle<svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 8L8 2M8 2H3.4M8 2v4.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-            </label>
-            <input type="number" id="intitle"</button>
+              <button class="q" type="button" aria-label="intitle 取值说明">?<span class="bub"><b>取值方式：</b>在 Google 搜索 <code>intitle:"关键词"</code>（须带引号），点击搜索框下方「工具」，读取「找到约 X 条结果」。<br>未加引号时结果数会显著偏大，不可用于计算；该数值仅用于计算 KGR。</span></button>
+              <button class="lk" type="button" data-tool="google-intitle">搜 intitle<svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 8L8 2M8 2H3.4M8 2v4.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
             </label>
             <input type="number" id="intitle" min="1" step="1" placeholder="1400" inputmode="numeric">
             <div class="err" id="intitle-err"></div>
