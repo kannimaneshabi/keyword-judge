@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>关键词判定器 · 出海建站</title>
 <meta name="description" content="按三档标准判断一个关键词值不值得做：填 KD、所需外链网站数、趋势形态等实测数据，输出通过/待定/淘汰与理由。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230f151c'/%3E%3Cpath d='M8.5 16.8l4.6 4.6L23.5 11' fill='none' stroke='%23ffffff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <style>
   *,*::before,*::after{box-sizing:border-box}
   html,body{margin:0;padding:0}
@@ -162,6 +163,13 @@
   .chk{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;color:var(--ink2);cursor:pointer;margin-right:16px}
   .chk .q{flex:0 0 auto;margin-left:-1px}
   .chk input{width:15px;height:15px;accent-color:var(--accent);cursor:pointer;margin:0}
+
+  /* 取词信息：四项不参与判定，只用于导出对齐候选词表 */
+  .quad{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:9px}
+  .quad label{display:grid;gap:4px;font-size:11.5px;color:var(--ink3);min-width:0}
+  .quad input{width:100%;min-height:34px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;font-size:13px;color:var(--ink);background:var(--card)}
+  .quad input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 12%,transparent)}
+  @media (max-width:600px){ .quad{grid-template-columns:repeat(2,minmax(0,1fr))} }
 
   /* ---------- ocr ---------- */
   .drop{
@@ -384,7 +392,7 @@
               <button class="q" type="button" aria-label="外链数取值说明">?<span class="bub"><b>取值方式：</b>在同一 Ahrefs 页面读取 <code>…need followed backlinks from ~N websites</code>，取其中的 N。<br>相比 KD，该数值更直接地反映进入前 10 所需的外链规模。</span></button>
               <button class="lk" type="button" data-tool="ahrefs">查 Ahrefs<svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 8L8 2M8 2H3.4M8 2v4.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
             </label>
-            <input type="number" id="refdomains" min="0" step="1" placeholder="99" inputmode="numeric">
+            <input type="text" id="refdomains" placeholder="99" inputmode="numeric" autocomplete="off">
             <div class="na-note">新词模式下不参与判定</div>
             <div class="err" id="refdomains-err"></div>
           </div>
@@ -466,12 +474,12 @@ example.org/page-without-protocol"></textarea>
           <div class="sep span2"><span>以下选填 · 影响 KGR 与风险提示</span></div>
 
           <div class="field">
-            <label class="fl" for="intitle">allintitle 结果数 <span class="opt" id="intitleOpt">可选</span> <span class="req onlyNew">*</span>
-              <button class="q" type="button" aria-label="allintitle 取值说明">?<span class="bub"><b>取值方式：</b>在 Google 搜索 <code>allintitle:"关键词"</code>（须带引号），点击搜索框下方「工具」，读取「找到约 X 条结果」。<br><b>为何用 allintitle：</b>它要求<b>整串词全部出现在标题里</b>；<code>intitle:</code> 只约束紧跟的一个词，其余词出现在正文也算命中，结果数偏大。<br>KGR 的原始定义即 <code>allintitle 结果数 ÷ 月搜索量</code>，所以这一格必须用 allintitle。</span></button>
-              <button class="lk" type="button" data-tool="google-intitle">搜 allintitle<svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 8L8 2M8 2H3.4M8 2v4.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            <label class="fl" for="intitle">intitle 结果数 <span class="opt" id="intitleOpt">可选</span> <span class="req onlyNew">*</span>
+              <button class="q" type="button" aria-label="intitle 取值说明">?<span class="bub"><b>取值方式：</b>在 Google 搜索 <code>intitle:"关键词"</code>（整串词加引号），点击搜索框下方「工具」，读取「找到约 X 条结果」。<br><b>为何带引号：</b><code>intitle:</code> 只约束紧跟的一个检索单位，加引号后整串词成为一个单位，标题里须整串出现；不加引号时其余词出现在正文也算命中，结果数偏大。<br><code>allintitle:"关键词"</code> 为等价写法（KGR 原始定义用 allintitle），两者数字通常接近。选定一种后前后保持一致即可。</span></button>
+              <button class="lk" type="button" data-tool="google-intitle">搜 intitle<svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 8L8 2M8 2H3.4M8 2v4.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
               <button class="lk mini" type="button" data-act="ocr" data-scope="intitle">截图取数</button>
             </label>
-            <input type="number" id="intitle" min="1" step="1" placeholder="1400" inputmode="numeric">
+            <input type="text" id="intitle" placeholder="1400" inputmode="numeric" autocomplete="off">
             <div class="err" id="intitle-err"></div>
           </div>
 
@@ -479,7 +487,7 @@ example.org/page-without-protocol"></textarea>
             <label class="fl" for="volume">月搜索量 <span class="opt">可选</span>
               <button class="q" type="button" aria-label="月搜索量说明">?<span class="bub"><b>可留空：</b>若无可用的 Google Ads 账号，可用 Trends 参照词估算（候选词曲线相对参照词的倍数 × 参照词日搜索量 × 30）。<br>留空则跳过 KGR 计算，其余判定不受影响。</span></button>
             </label>
-            <input type="number" id="volume" min="1" step="1" placeholder="20000" inputmode="numeric">
+            <input type="text" id="volume" placeholder="20000" inputmode="numeric" autocomplete="off">
             <div class="err" id="volume-err"></div>
           </div>
 
@@ -496,6 +504,18 @@ example.org/page-without-protocol"></textarea>
             </label>
           </div>
 
+          <div class="field span2">
+            <label class="fl">取词信息 <span class="opt">可选</span>
+              <button class="q" type="button" aria-label="取词信息说明">?<span class="bub"><b>这四项不参与判定</b>，只写进导出记录，让导出的表格能直接粘进候选词表；留空时导出为「—」。<br><b>来源：</b>怎么发现这个词的（Trends 相关查询 / 竞品流量词 / 词根扩展）。<br><b>出现时间：</b>曲线从 0 抬起来的时点；超过 12 个月按老词算。<br><b>对比倍数：</b>与参照词放在同一张 Trends 图里，候选是参照的几倍。<br><b>估算日搜索量：</b>对比倍数 × 参照词日搜索量。</span></button>
+            </label>
+            <div class="quad">
+              <label>来源<input type="text" id="srcKw" placeholder="Trends 相关查询" autocomplete="off"></label>
+              <label>出现时间<input type="text" id="firstSeen" placeholder="2026-09 / 老词" autocomplete="off"></label>
+              <label>对比倍数<input type="text" id="ratio" placeholder="3.5" inputmode="decimal" autocomplete="off"></label>
+              <label>估算日搜索量<input type="text" id="dailyVol" placeholder="1200" inputmode="numeric" autocomplete="off"></label>
+            </div>
+          </div>
+
           <input type="file" id="ocrFile" accept="image/*" hidden>
           <input type="file" id="csvFile" accept=".csv,text/csv" hidden>
         </div>
@@ -507,7 +527,7 @@ example.org/page-without-protocol"></textarea>
           <label>KD &lt; <input type="number" id="tKd" value="10" min="1" max="100"></label>
           <label>外链站 &lt; <input type="number" id="tRef" value="10" min="1" max="999"></label>
           <label>KGR &lt; <input type="number" id="tKgr" value="0.25" min="0.01" max="10" step="0.05"></label>
-          <label class="onlyNew">allintitle ≤ <input type="number" id="tAI" value="50" min="1" max="100000"></label>
+          <label class="onlyNew">intitle ≤ <input type="number" id="tAI" value="50" min="1" max="100000"></label>
         </div>
         <div class="toggles">
           <div class="tg">
@@ -520,7 +540,7 @@ example.org/page-without-protocol"></textarea>
           </div>
           <div class="tg">
             <label class="sw"><input type="checkbox" id="sNew"><i></i></label>
-            <div class="tg-t"><b>新词模式（KD 无数据）</b><small>勾选后 KD 与所需外链数不参与判定，改用 allintitle 供给量与 SERP 结构判断</small></div>
+            <div class="tg-t"><b>新词模式（KD 无数据）</b><small>勾选后 KD 与所需外链数不参与判定，改用 intitle 供给量与 SERP 结构判断</small></div>
           </div>
           <div class="tg">
             <label class="sw"><input type="checkbox" id="sRisk" checked><i></i></label>
@@ -577,7 +597,8 @@ example.org/page-without-protocol"></textarea>
     trend:$('trend'), serp:$('serp'), brand:$('brand'), sitelinks:$('sitelinks'), domain:$('domain'),
     tKd:$('tKd'), tRef:$('tRef'), tKgr:$('tKgr'),
     sBrand:$('sBrand'), sTrend:$('sTrend'), sRisk:$('sRisk'), tRisk:$('tRisk'),
-    sNew:$('sNew'), tAI:$('tAI'), sNewInline:$('sNewInline')
+    sNew:$('sNew'), tAI:$('tAI'), sNewInline:$('sNewInline'),
+    srcKw:$('srcKw'), firstSeen:$('firstSeen'), ratio:$('ratio'), dailyVol:$('dailyVol')
   };
   const NUM_FIELDS = ['intitle','volume','kd','ref','tKd','tRef','tKgr','tRisk'];
   const DRAFT_KEY = 'kj.draft.v1';
@@ -656,7 +677,7 @@ example.org/page-without-protocol"></textarea>
     const t = TOOLS[tool];
     if(!t) throw new Error('unknown tool');
     if(!t.prefill) return t.base;
-    const q = t.intitle ? 'allintitle:"' + keyword.replace(/"/g, '') + '"' : keyword;
+    const q = t.intitle ? 'intitle:"' + keyword.replace(/"/g, '') + '"' : keyword;
     return t.base + encodeURIComponent(q);
   }
 
@@ -762,12 +783,13 @@ example.org/page-without-protocol"></textarea>
     else if(/[\u4e00-\u9fa5]/.test(kw)){ setErr('kw','含中文字符，海外站要用英文原词'); errs.push('关键词'); }
     else if(kw.length > 80){ setErr('kw','过长（>80 字符），确认是否粘贴了整段'); errs.push('关键词'); }
 
-    // 新词模式：KD 与外链数不参与判定，intitle（allintitle 供给量）转为必填
+    // 新词模式：KD 与外链数不参与判定，intitle（供给量）转为必填
     if(isNew){
       const it0 = toNum(F.intitle);
-      if(it0 === null && needAll){ setErr('intitle','新词模式必填：填 allintitle 结果数'); errs.push('allintitle 结果数'); }
-      else if(Number.isNaN(it0)){ setErr('intitle','不是有效数字'); errs.push('allintitle 结果数'); }
-      else if(it0 !== null && it0 < 0){ setErr('intitle','不能为负数'); errs.push('allintitle 结果数'); }
+      if(it0 === null && needAll){ setErr('intitle','新词模式必填：填 intitle 结果数'); errs.push('intitle 结果数'); }
+      else if(Number.isNaN(it0)){ setErr('intitle','不是有效数字'); errs.push('intitle 结果数'); }
+      else if(it0 !== null && it0 < 0){ setErr('intitle','不能为负数'); errs.push('intitle 结果数'); }
+      else if(it0 !== null && !Number.isInteger(it0)){ setErr('intitle','应为整数'); errs.push('intitle 结果数'); }
     } else {
       const kd = toNum(F.kd);
       if(kd === null && needAll){ setErr('kd','必填；Ahrefs 无数据请勾选「新词模式」'); errs.push('KD'); }
@@ -783,11 +805,13 @@ example.org/page-without-protocol"></textarea>
 
     const it = toNum(F.intitle), vol = toNum(F.volume);
     if(!isNew){
-      if(Number.isNaN(it)){ setErr('intitle','不是有效数字'); errs.push('allintitle 结果数'); }
-      else if(it !== null && it <= 0){ setErr('intitle','应为大于 0 的整数；若确实搜不到，说明没有供应量'); errs.push('allintitle 结果数'); }
+      if(Number.isNaN(it)){ setErr('intitle','不是有效数字'); errs.push('intitle 结果数'); }
+      else if(it !== null && it <= 0){ setErr('intitle','应为大于 0 的整数；若确实搜不到，说明没有供应量'); errs.push('intitle 结果数'); }
+      else if(it !== null && !Number.isInteger(it)){ setErr('intitle','应为整数'); errs.push('intitle 结果数'); }
     }
     if(Number.isNaN(vol)){ setErr('volume','不是有效数字'); errs.push('月搜索量'); }
     else if(vol !== null && vol <= 0){ setErr('volume','应为大于 0 的整数，或直接留空'); errs.push('月搜索量'); }
+    else if(vol !== null && !Number.isInteger(vol)){ setErr('volume','应为整数，或直接留空'); errs.push('月搜索量'); }
 
     if(needAll && !F.trend.value){ setErr('trend','必选'); errs.push('趋势形态'); }
     if(needAll && !F.serp.value){ setErr('serp','必选'); errs.push('前 10 构成'); }
@@ -802,7 +826,10 @@ example.org/page-without-protocol"></textarea>
       kd: toNum(F.kd), ref: toNum(F.ref),
       trend: F.trend.value, serp: F.serp.value,
       brand: F.brand.checked, sitelinks: F.sitelinks.checked, domainOk: F.domain.checked,
-      isNew: F.sNew.checked
+      isNew: F.sNew.checked,
+      // 取词信息：不参与判定，只进导出记录（对齐候选词表列）
+      src: F.srcKw.value.trim(), firstSeen: F.firstSeen.value.trim(),
+      ratio: F.ratio.value.trim(), dailyVol: F.dailyVol.value.trim()
     };
   }
   function readRules(){
@@ -823,13 +850,13 @@ example.org/page-without-protocol"></textarea>
 
     const aiLimit = rules.allintitle != null ? rules.allintitle : (rules.ai != null ? rules.ai : 50);
 
-    // 硬指标：常规模式看 KD / 外链 / 趋势；新词模式看 allintitle 供给量 / SERP 结构 / 趋势
+    // 硬指标：常规模式看 KD / 外链 / 趋势；新词模式看 intitle 供给量 / SERP 结构 / 趋势
     let hard;
     if(isNew){
       const ai = d.intitle;
       const aiOk = ai !== null && ai <= aiLimit;
       hard = [
-        { key:'ai', label:'allintitle 供给量', ok: aiOk,
+        { key:'ai', label:'intitle 供给量', ok: aiOk,
           txt: (ai === null ? '未填' : fmt(ai) + ' 条') + '（阈值 ≤ ' + aiLimit +
                (aiOk ? (ai <= 5 ? '，无人防守' : '') : '，超出 ' + (ai / aiLimit).toFixed(1) + ' 倍') + '）' },
         { key:'serp', label:'前 10 构成', ok: d.serp !== 'dedicated',
@@ -889,12 +916,12 @@ example.org/page-without-protocol"></textarea>
     // 数据自洽提示（不参与判定）
     const notes = [];
     if(!isNew){
-      if(kgr !== null && kgr > 5) notes.push('KGR 异常偏高（' + kgr.toFixed(1) + '），请检查 allintitle 结果数与月搜索量是否填反。');
+      if(kgr !== null && kgr > 5) notes.push('KGR 异常偏高（' + kgr.toFixed(1) + '），请检查 intitle 结果数与月搜索量是否填反。');
       if(d.kd <= 5 && d.serp === 'dedicated') notes.push('KD 很低但前 10 名均为独立站点，两项数据可能存在填写错误。');
       if(d.ref === 0 && d.kd > 20) notes.push('所需外链站为 0 但 KD 偏高，两者通常不会同时出现，请核对。');
-      if(d.volume !== null && d.intitle !== null && d.volume > 0 && d.intitle > d.volume * 50) notes.push('allintitle 结果数远大于月搜索量，请确认搜索时是否遗漏引号。');
+      if(d.volume !== null && d.intitle !== null && d.volume > 0 && d.intitle > d.volume * 50) notes.push('intitle 结果数远大于月搜索量，请确认搜索时是否遗漏引号。');
     } else {
-      if(d.intitle === 0) notes.push('allintitle 结果为 0：该词尚无任何页面把整串词写进标题，供给完全空白。');
+      if(d.intitle === 0) notes.push('intitle 结果为 0：该词尚无任何页面把整串词写进标题，供给完全空白。');
       if(d.kd !== null) notes.push('新词模式下 KD 已填写的值被忽略，切回常规模式可继续使用。');
     }
 
@@ -924,7 +951,7 @@ example.org/page-without-protocol"></textarea>
       rows.push(row(h.label, h.txt, h.ok ? 'ok' : 'bad'));
     });
     if(!r.isNew){
-      rows.push(row('allintitle 结果数', d.intitle === null ? '未填' : fmt(d.intitle), 'muted'));
+      rows.push(row('intitle 结果数', d.intitle === null ? '未填' : fmt(d.intitle), 'muted'));
       rows.push(row('KGR',
         r.kgr === null ? '—' : r.kgr.toFixed(3),
         r.kgr === null ? 'muted' : (r.kgrHigh ? 'bad' : 'ok'),
@@ -1022,7 +1049,7 @@ example.org/page-without-protocol"></textarea>
     const d = data || readData();
     const parts = [];
     if(d.isNew){
-      if(d.intitle !== null && d.intitle > p.ai) parts.push('allintitle ' + d.intitle + ' vs ≤' + p.ai);
+      if(d.intitle !== null && d.intitle > p.ai) parts.push('intitle ' + d.intitle + ' vs ≤' + p.ai);
       if(d.serp === 'dedicated') parts.push('前 10 已被独立站点占据');
     } else {
       if(d.kd >= p.kd) parts.push('KD ' + d.kd + ' vs <' + p.kd);
@@ -1062,6 +1089,8 @@ example.org/page-without-protocol"></textarea>
     F.kd.value = d.kd; F.ref.value = d.ref; F.trend.value = d.trend; F.serp.value = d.serp;
     F.brand.checked = d.brand; F.sitelinks.checked = d.sitelinks; F.domain.checked = d.domainOk;
     F.sNew.checked = !!h.isNew;
+    F.srcKw.value = d.src || ''; F.firstSeen.value = d.firstSeen || '';
+    F.ratio.value = d.ratio || ''; F.dailyVol.value = d.dailyVol || '';
     syncNewMode();
     F.tKd.value = h.rules.kd; F.tRef.value = h.rules.ref; F.tKgr.value = h.rules.kgr;
     F.sBrand.checked = h.rules.brandVeto; F.sTrend.checked = h.rules.trendHard;
@@ -1088,7 +1117,10 @@ example.org/page-without-protocol"></textarea>
     const cells = [
       String(idx + 1),
       h.kw,
-      fmtTs(h.ts),
+      d.src || '—',
+      d.firstSeen || '—',
+      d.ratio || '—',
+      d.dailyVol || '—',
       TREND[d.trend] || '—',
       d.intitle === null ? '未查' : fmt(d.intitle),
       kgr,
@@ -1097,6 +1129,7 @@ example.org/page-without-protocol"></textarea>
       d.serp ? SERP[d.serp] + (d.sitelinks ? '，有 Sitelinks' : '') : '未查',
       d.domainOk ? '可' : '不可',
       h.label,
+      fmtTs(h.ts),
       h.level === 'custom' ? '自定义' : PRESETS[h.level].name
     ];
     return '| ' + cells.map(c => String(c).replace(/\|/g, '\\|')).join(' | ') + ' |';
@@ -1106,14 +1139,15 @@ example.org/page-without-protocol"></textarea>
     if(!history.length) return;
     const sorted = history.slice().sort((a, b) => (a.ts || 0) - (b.ts || 0));
     const head = '# 关键词判定记录\n\n' +
-      '| # | 关键词 | 判定时间 | 趋势形态 | allintitle 结果数 | KGR | KD | 所需外链站数 | 前 10 概况 | .com 可注册 | 结论 | 档位 |\n' +
-      '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n';
+      '> 前 14 列按候选词表的列序排列，可直接粘进表格；末两列为判定时间与档位。\n\n' +
+      '| # | 关键词 | 来源 | 出现时间 | 对比倍数 | 估算日搜索量 | 趋势形态 | intitle 结果数 | KGR | KD | 所需外链站数 | 前 10 概况 | .com 可注册 | 结论 | 判定时间 | 档位 |\n' +
+      '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n';
     const rows = sorted.map((h, i) => historyRowMarkdown(h, i)).join('\n');
     const rules = sorted.map((h, i) => {
       const r = h.rules;
       const aiTxt = (r.allintitle != null ? r.allintitle : 50);
       return '- 第 ' + (i + 1) + ' 条：' + h.kw +
-        '　门槛 KD<' + r.kd + '、外链<' + r.ref + '、KGR<' + r.kgr + '、allintitle≤' + aiTxt +
+        '　门槛 KD<' + r.kd + '、外链<' + r.ref + '、KGR<' + r.kgr + '、intitle≤' + aiTxt +
         '；趋势硬指标' + (r.trendHard ? '开' : '关') +
         '，品牌词否决' + (r.brandVeto ? '开' : '关') +
         '，风险≥' + (r.riskGate || '不拦截');
@@ -1220,7 +1254,7 @@ example.org/page-without-protocol"></textarea>
     }
     clearArm = 0; btn.textContent = '清空'; btn.classList.remove('primary');
     // 按 DOM id 清空，不依赖 F 的键名（F 中 refdomains 对应的键是 ref）
-    ['kw','intitle','volume','kd','refdomains'].forEach(id => {
+    ['kw','intitle','volume','kd','refdomains','srcKw','firstSeen','ratio','dailyVol'].forEach(id => {
       const el = $(id);
       if(!el) return;
       el.value = '';
@@ -1275,6 +1309,8 @@ example.org/page-without-protocol"></textarea>
       F.trend.value = d.trend || ''; F.serp.value = d.serp || '';
       F.brand.checked = !!d.brand; F.sitelinks.checked = !!d.sitelinks; F.domain.checked = d.domainOk !== false;
       F.sNew.checked = !!s.isNew;
+      F.srcKw.value = d.src || ''; F.firstSeen.value = d.firstSeen || '';
+      F.ratio.value = d.ratio || ''; F.dailyVol.value = d.dailyVol || '';
       if(s.rules){
         F.tKd.value = s.rules.kd ?? 10; F.tRef.value = s.rules.ref ?? 10; F.tKgr.value = s.rules.kgr ?? 0.25;
         if(s.rules.allintitle) F.tAI.value = s.rules.allintitle;
@@ -1643,9 +1679,10 @@ example.org/page-without-protocol"></textarea>
       const res=classifyTrend(f, months, 'relative');
       res.f=f;
       renderTrend(res, {source:'走势图', points:f.N, months, imgW:im.naturalWidth, scale:'relative'});
-      if(im.naturalWidth<800) setT('提示：图像宽度不足 800px，识别结果可靠性下降。','err');
-      else if(ex.coverage<0.85) setT('提示：曲线覆盖率 '+(ex.coverage*100).toFixed(0)+'%，部分区段可能被遮挡或线条过细。','err');
-      else setT('识别完成：'+TREND[res.best.key]+'（置信度 '+Math.round(res.conf*100)+'%）','ok');
+      const head = '识别完成：'+TREND[res.best.key]+'（置信度 '+Math.round(res.conf*100)+'%）';
+      if(im.naturalWidth<800) setT(head+' · 提示：图像宽度不足 800px，识别结果可靠性下降。','err');
+      else if(ex.coverage<0.85) setT(head+' · 提示：曲线覆盖率 '+(ex.coverage*100).toFixed(0)+'%，部分区段可能被遮挡或线条过细。','err');
+      else setT(head,'ok');
     }catch(e){
       tResult.classList.remove('on'); tResult.innerHTML=''; tLook=null;
       setT('图片读取失败，请另存为 PNG/JPG 后重试。','err');
@@ -2011,7 +2048,9 @@ example.org/page-without-protocol"></textarea>
 
   /* ============ 初始化 ============ */
   const restored = restoreDraft();
-  syncLevelUI();
+  // 无草稿时按严格档预设初始化：否则界面标着「严格」，开关却停在 HTML 默认值
+  // （「趋势下降/尖刺视为硬指标」未勾选），与档位定义不一致，会漏判硬指标。
+  if(!restored) applyLevel(level, true); else syncLevelUI();
   syncNewMode();
   syncTools();
   if(restored){
