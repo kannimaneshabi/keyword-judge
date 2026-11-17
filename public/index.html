@@ -466,9 +466,9 @@ example.org/page-without-protocol"></textarea>
           <div class="sep span2"><span>以下选填 · 影响 KGR 与风险提示</span></div>
 
           <div class="field">
-            <label class="fl" for="intitle">intitle 结果数 <span class="opt" id="intitleOpt">可选</span> <span class="req onlyNew">*</span>
-              <button class="q" type="button" aria-label="intitle 取值说明">?<span class="bub"><b>取值方式：</b>在 Google 搜索 <code>intitle:"关键词"</code>（须带引号），点击搜索框下方「工具」，读取「找到约 X 条结果」。<br>未加引号时结果数会显著偏大，不可用于计算；该数值仅用于计算 KGR。</span></button>
-              <button class="lk" type="button" data-tool="google-intitle">搜 intitle<svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 8L8 2M8 2H3.4M8 2v4.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            <label class="fl" for="intitle">allintitle 结果数 <span class="opt" id="intitleOpt">可选</span> <span class="req onlyNew">*</span>
+              <button class="q" type="button" aria-label="allintitle 取值说明">?<span class="bub"><b>取值方式：</b>在 Google 搜索 <code>allintitle:"关键词"</code>（须带引号），点击搜索框下方「工具」，读取「找到约 X 条结果」。<br><b>为何用 allintitle：</b>它要求<b>整串词全部出现在标题里</b>；<code>intitle:</code> 只约束紧跟的一个词，其余词出现在正文也算命中，结果数偏大。<br>KGR 的原始定义即 <code>allintitle 结果数 ÷ 月搜索量</code>，所以这一格必须用 allintitle。</span></button>
+              <button class="lk" type="button" data-tool="google-intitle">搜 allintitle<svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 8L8 2M8 2H3.4M8 2v4.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
               <button class="lk mini" type="button" data-act="ocr" data-scope="intitle">截图取数</button>
             </label>
             <input type="number" id="intitle" min="1" step="1" placeholder="1400" inputmode="numeric">
@@ -656,7 +656,7 @@ example.org/page-without-protocol"></textarea>
     const t = TOOLS[tool];
     if(!t) throw new Error('unknown tool');
     if(!t.prefill) return t.base;
-    const q = t.intitle ? 'intitle:"' + keyword.replace(/"/g, '') + '"' : keyword;
+    const q = t.intitle ? 'allintitle:"' + keyword.replace(/"/g, '') + '"' : keyword;
     return t.base + encodeURIComponent(q);
   }
 
@@ -783,8 +783,8 @@ example.org/page-without-protocol"></textarea>
 
     const it = toNum(F.intitle), vol = toNum(F.volume);
     if(!isNew){
-      if(Number.isNaN(it)){ setErr('intitle','不是有效数字'); errs.push('intitle 结果数'); }
-      else if(it !== null && it <= 0){ setErr('intitle','应为大于 0 的整数；若确实搜不到，说明没有供应量'); errs.push('intitle 结果数'); }
+      if(Number.isNaN(it)){ setErr('intitle','不是有效数字'); errs.push('allintitle 结果数'); }
+      else if(it !== null && it <= 0){ setErr('intitle','应为大于 0 的整数；若确实搜不到，说明没有供应量'); errs.push('allintitle 结果数'); }
     }
     if(Number.isNaN(vol)){ setErr('volume','不是有效数字'); errs.push('月搜索量'); }
     else if(vol !== null && vol <= 0){ setErr('volume','应为大于 0 的整数，或直接留空'); errs.push('月搜索量'); }
@@ -889,10 +889,10 @@ example.org/page-without-protocol"></textarea>
     // 数据自洽提示（不参与判定）
     const notes = [];
     if(!isNew){
-      if(kgr !== null && kgr > 5) notes.push('KGR 异常偏高（' + kgr.toFixed(1) + '），请检查 intitle 结果数与月搜索量是否填反。');
+      if(kgr !== null && kgr > 5) notes.push('KGR 异常偏高（' + kgr.toFixed(1) + '），请检查 allintitle 结果数与月搜索量是否填反。');
       if(d.kd <= 5 && d.serp === 'dedicated') notes.push('KD 很低但前 10 名均为独立站点，两项数据可能存在填写错误。');
       if(d.ref === 0 && d.kd > 20) notes.push('所需外链站为 0 但 KD 偏高，两者通常不会同时出现，请核对。');
-      if(d.volume !== null && d.intitle !== null && d.volume > 0 && d.intitle > d.volume * 50) notes.push('intitle 结果数远大于月搜索量，请确认搜索时是否遗漏引号。');
+      if(d.volume !== null && d.intitle !== null && d.volume > 0 && d.intitle > d.volume * 50) notes.push('allintitle 结果数远大于月搜索量，请确认搜索时是否遗漏引号。');
     } else {
       if(d.intitle === 0) notes.push('allintitle 结果为 0：该词尚无任何页面把整串词写进标题，供给完全空白。');
       if(d.kd !== null) notes.push('新词模式下 KD 已填写的值被忽略，切回常规模式可继续使用。');
@@ -924,7 +924,7 @@ example.org/page-without-protocol"></textarea>
       rows.push(row(h.label, h.txt, h.ok ? 'ok' : 'bad'));
     });
     if(!r.isNew){
-      rows.push(row('intitle 结果数', d.intitle === null ? '未填' : fmt(d.intitle), 'muted'));
+      rows.push(row('allintitle 结果数', d.intitle === null ? '未填' : fmt(d.intitle), 'muted'));
       rows.push(row('KGR',
         r.kgr === null ? '—' : r.kgr.toFixed(3),
         r.kgr === null ? 'muted' : (r.kgrHigh ? 'bad' : 'ok'),
@@ -1106,7 +1106,7 @@ example.org/page-without-protocol"></textarea>
     if(!history.length) return;
     const sorted = history.slice().sort((a, b) => (a.ts || 0) - (b.ts || 0));
     const head = '# 关键词判定记录\n\n' +
-      '| # | 关键词 | 判定时间 | 趋势形态 | intitle 结果数 | KGR | KD | 所需外链站数 | 前 10 概况 | .com 可注册 | 结论 | 档位 |\n' +
+      '| # | 关键词 | 判定时间 | 趋势形态 | allintitle 结果数 | KGR | KD | 所需外链站数 | 前 10 概况 | .com 可注册 | 结论 | 档位 |\n' +
       '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n';
     const rows = sorted.map((h, i) => historyRowMarkdown(h, i)).join('\n');
     const rules = sorted.map((h, i) => {
